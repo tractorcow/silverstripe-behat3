@@ -2,28 +2,29 @@
 
 namespace SilverStripe\BehatExtension\Context;
 
-use Behat\Behat\Context\Step;
-use Behat\Behat\Event\ScenarioEvent;
+use Behat\Behat\Hook\Scope\BeforeScenarioScope;
+use Behat\Behat\Hook\Scope\BeforeStepScope;
+use Behat\Mink\Element\NodeElement;
+use Behat\Mink\Selector\Xpath\Escaper;
 use Behat\MinkExtension\Context\MinkContext;
-use Behat\Mink\Driver\GoutteDriver;
 use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Exception\UnsupportedDriverActionException;
 use Behat\Mink\Exception\ElementNotFoundException;
 use InvalidArgumentException;
-use SilverStripe\BehatExtension\Context\SilverStripeAwareContextInterface;
-use Symfony\Component\Yaml\Yaml;
-
-// Mink etc.
-require_once 'vendor/autoload.php';
-
-require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions.php';
+use SilverStripe\TestSession\TestSessionEnvironment;
+use Symfony\Component\CssSelector\Exception\SyntaxErrorException;
 
 /**
  * SilverStripeContext
  *
  * Generic context wrapper used as a base for Behat FeatureContext.
+ *
+ * The default context for each module should extend this and be named `FeatureContext`
+ * under the standard module namespace.
+ *
+ * @link http://behat.org/en/latest/user_guide/context.html
  */
-class SilverStripeContext extends MinkContext implements SilverStripeAwareContextInterface
+abstract class SilverStripeContext extends MinkContext implements SilverStripeAwareContext
 {
     protected $databaseName;
 
@@ -31,7 +32,7 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
      * @var array Partial string match for step names
      * that are considered to trigger Ajax request in the CMS,
      * and hence need special timeout handling.
-     * @see \SilverStripe\BehatExtension\Context\BasicContext->handleAjaxBeforeStep().
+     * @see \SilverStripe\BehatExtension\Context\BasicContextAwareTrait->handleAjaxBeforeStep().
      */
     protected $ajaxSteps;
 
@@ -57,10 +58,19 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
      */
     protected $screenshotPath;
 
-    protected $context;
-
+    /**
+     * @var TestSessionEnvironment
+     */
     protected $testSessionEnvironment;
 
+    protected $regionMap;
+
+    /**
+     * XPath escaper
+     *
+     * @var Escaper
+     */
+    protected $xpathEscaper;
 
     /**
      * Initializes context.
@@ -68,11 +78,27 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
      *
      * @param   array   $parameters     context parameters (set them up through behat.yml)
      */
-    public function __construct(array $parameters)
+    public function __construct(array $parameters = null)
     {
+        if (!preg_match('/\\FeatureContext$/', get_class($this))) {
+            throw new InvalidArgumentException(
+                'Subclasses of SilverStripeContext must be named FeatureContext. Found "' . get_class($this) . '""'
+            );
+        }
+
         // Initialize your context here
-        $this->context = $parameters;
-        $this->testSessionEnvironment = new \TestSessionEnvironment();
+        $this->xpathEscaper = new Escaper();
+        $this->testSessionEnvironment = TestSessionEnvironment::singleton();
+    }
+
+    /**
+     * Get xpath escaper
+     *
+     * @return Escaper
+     */
+    public function getXpathEscaper()
+    {
+        return $this->xpathEscaper;
     }
 
     public function setDatabase($databaseName)
@@ -143,12 +169,13 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
     }
 
     /**
-     * Returns MinkElement based off region defined in .yml file.
+     * Returns NodeElement based off region defined in .yml file.
      * Also supports direct CSS selectors and regions identified by a "data-title" attribute.
      * When using the "data-title" attribute, ensure not to include double quotes.
      *
      * @param string $region Region name or CSS selector
-     * @return MinkElement
+     * @return NodeElement
+     * @throws ElementNotFoundException
      */
     public function getRegionObj($region)
     {
@@ -157,12 +184,12 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
             $regionObj = $this->getSession()->getPage()->find(
                 'css',
                 // Escape CSS selector
-                (false !== strpos($region, "'")) ? str_replace("'", "\'", $region) : $region
+                (false !== strpos($region, "'")) ? str_replace("'", "\\'", $region) : $region
             );
             if ($regionObj) {
                 return $regionObj;
             }
-        } catch (\Symfony\Component\CssSelector\Exception\SyntaxErrorException $e) {
+        } catch (SyntaxErrorException $e) {
             // fall through to next case
         }
 
@@ -188,7 +215,7 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
         }
         $regionObj = $this->getSession()->getPage()->find('css', $region);
         if (!$regionObj) {
-            throw new ElementNotFoundException("Cannot find the specified region on the page");
+            throw new ElementNotFoundException($this->getSession(), "Cannot find the specified region on the page");
         }
 
         return $regionObj;
@@ -196,8 +223,9 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
 
     /**
      * @BeforeScenario
+     * @param BeforeScenarioScope $event
      */
-    public function before(ScenarioEvent $event)
+    public function before(BeforeScenarioScope $event)
     {
         if (!isset($this->databaseName)) {
             throw new \LogicException(
@@ -318,14 +346,14 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
      * Forward slash usages are normalised to one between parts.
      * This method takes variable number of parameters.
      *
-     * @param $...
+     * @param string $part,...
      * @return string
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
-    public function joinUrlParts()
+    public function joinUrlParts($part = null)
     {
         if (0 === func_num_args()) {
-            throw new \InvalidArgumentException('Need at least one argument');
+            throw new InvalidArgumentException('Need at least one argument');
         }
 
         $parts = func_get_args();
@@ -340,44 +368,35 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
     public function canIntercept()
     {
         $driver = $this->getSession()->getDriver();
-        if ($driver instanceof GoutteDriver) {
-            return true;
-        } else {
-            if ($driver instanceof Selenium2Driver) {
-                return false;
-            }
+        if ($driver instanceof Selenium2Driver) {
+            return false;
         }
 
-        throw new UnsupportedDriverActionException('You need to tag the scenario with "@mink:goutte" or
-			"@mink:symfony". Intercepting the redirections is not supported by %s', $driver);
-    }
-
-    /**
-     * @Given /^(.*) without redirection$/
-     */
-    public function theRedirectionsAreIntercepted($step)
-    {
-        if ($this->canIntercept()) {
-            $this->getSession()->getDriver()->getClient()->followRedirects(false);
-        }
-
-        return new Step\Given($step);
+        throw new UnsupportedDriverActionException(
+            'You need to tag the scenario with "@mink:symfony". Intercepting the redirections is not supported by %s',
+            get_class($driver)
+        );
     }
 
     /**
      * Fills in form field with specified id|name|label|value.
      * Overwritten to select the first *visible* element, see https://github.com/Behat/Mink/issues/311
+     *
+     * @param string $field
+     * @param string $value
+     * @throws ElementNotFoundException
      */
     public function fillField($field, $value)
     {
         $value = $this->fixStepArgument($value);
-        $fields = $this->getSession()->getPage()->findAll('named', array(
-            'field', $this->getSession()->getSelectorsHandler()->xpathLiteral($field)
+        $nodes = $this->getSession()->getPage()->findAll('named', array(
+            'field', $this->getXpathEscaper()->escapeLiteral($field)
         ));
-        if ($fields) {
-            foreach ($fields as $f) {
-                if ($f->isVisible()) {
-                    $f->setValue($value);
+        if ($nodes) {
+            /** @var NodeElement $node */
+            foreach ($nodes as $node) {
+                if ($node->isVisible()) {
+                    $node->setValue($value);
                     return;
                 }
             }
@@ -393,17 +412,21 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
 
     /**
      * Overwritten to click the first *visable* link the DOM.
+     *
+     * @param string $link
+     * @throws ElementNotFoundException
      */
     public function clickLink($link)
     {
         $link = $this->fixStepArgument($link);
-        $links = $this->getSession()->getPage()->findAll('named', array(
-            'link', $this->getSession()->getSelectorsHandler()->xpathLiteral($link)
+        $nodes = $this->getSession()->getPage()->findAll('named', array(
+            'link', $this->getXpathEscaper()->escapeLiteral($link)
         ));
-        if ($links) {
-            foreach ($links as $l) {
-                if ($l->isVisible()) {
-                    $l->click();
+        if ($nodes) {
+            /** @var NodeElement $node */
+            foreach ($nodes as $node) {
+                if ($node->isVisible()) {
+                    $node->click();
                     return;
                 }
             }
@@ -416,13 +439,14 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
         );
     }
 
-     /**
+    /**
      * Sets the current date. Relies on the underlying functionality using
      * {@link SS_Datetime::now()} rather than PHP's system time methods like date().
      * Supports ISO fomat: Y-m-d
      * Example: Given the current date is "2009-10-31"
      *
      * @Given /^the current date is "([^"]*)"$/
+     * @param string $date
      */
     public function givenTheCurrentDateIs($date)
     {
@@ -447,6 +471,7 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
      * Example: Given the current time is "20:31:50"
      *
      * @Given /^the current time is "([^"]*)"$/
+     * @param string $time
      */
     public function givenTheCurrentTimeIs($time)
     {
@@ -468,6 +493,8 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
      * Selects option in select field with specified id|name|label|value.
      *
      * @override /^(?:|I )select "(?P<option>(?:[^"]|\\")*)" from "(?P<select>(?:[^"]|\\")*)"$/
+     * @param string $select
+     * @param string $option
      */
     public function selectOption($select, $option)
     {
@@ -491,6 +518,9 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
      * overridden by javascript libraries, and thus hide the element.
      *
      * @When /^(?:|I )select "(?P<option>(?:[^"]|\\")*)" from "(?P<select>(?:[^"]|\\")*)" with javascript$/
+     * @param string $select
+     * @param string $option
+     * @throws ElementNotFoundException
      */
     public function selectOptionWithJavascript($select, $option)
     {
@@ -506,7 +536,7 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
 
         // Find option
         $opt = $field->find('named', array(
-            'option', $this->getSession()->getSelectorsHandler()->xpathLiteral($option)
+            'option', $this->getXpathEscaper()->escapeLiteral($option)
         ));
         if (null === $opt) {
             throw new ElementNotFoundException($this->getSession(), 'select option', 'value|text', $option);

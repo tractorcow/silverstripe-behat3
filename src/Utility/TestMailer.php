@@ -3,8 +3,7 @@
 namespace SilverStripe\BehatExtension\Utility;
 
 use SilverStripe\Dev\TestMailer as BaseTestMailer;
-use SilverStripe\Core\Injector\Injector;
-use TestSessionEnvironment;
+use SilverStripe\TestSession\TestSessionEnvironment;
 
 /**
  * Same principle as core TestMailer class,
@@ -13,7 +12,6 @@ use TestSessionEnvironment;
  */
 class TestMailer extends BaseTestMailer
 {
-
     /**
      * @var TestSessionEnvironment
      */
@@ -21,7 +19,7 @@ class TestMailer extends BaseTestMailer
 
     public function __construct()
     {
-        $this->testSessionEnvironment = Injector::inst()->get('TestSessionEnvironment');
+        $this->testSessionEnvironment = TestSessionEnvironment::singleton();
     }
 
     /**
@@ -36,23 +34,12 @@ class TestMailer extends BaseTestMailer
         $this->testSessionEnvironment->applyState($state);
     }
 
-    /**
-     * Search for an email that was sent.
-     * All of the parameters can either be a string, or, if they start with "/", a PREG-compatible regular expression.
-     *
-     * @param $to
-     * @param $from
-     * @param $subject
-     * @param $content
-     * @return array Contains the keys: 'type', 'to', 'from', 'subject', 'content', 'plainContent', 'attachedFiles',
-     *               'customHeaders', 'htmlContent', 'inlineImages'
-     */
     public function findEmail($to = null, $from = null, $subject = null, $content = null)
     {
         $matches = $this->findEmails($to, $from, $subject, $content);
-                //got the count of matches emails
-                $emailCount = count($matches);
-                //get the last(latest) one
+        //got the count of matches emails
+        $emailCount = count($matches);
+        //get the last(latest) one
         return $matches ? $matches[$emailCount-1] : null;
     }
 

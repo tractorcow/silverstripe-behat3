@@ -2,49 +2,25 @@
 
 namespace SilverStripe\BehatExtension\Context;
 
-use Behat\Behat\Context\BehatContext;
-use Behat\Behat\Context\Step;
-use SilverStripe\Core\Injector\Injector;
-use SilverStripe\ORM\DataObject;
+use Behat\Behat\Context\Context;
+use Behat\Mink\Element\NodeElement;
 use SilverStripe\Security\Group;
 use SilverStripe\Security\Member;
-
-// PHPUnit
-require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions.php';
+use SilverStripe\Security\Permission;
 
 /**
  * LoginContext
  *
  * Context used to define steps related to login and logout functionality
  */
-class LoginContext extends BehatContext
+class LoginContext implements Context
 {
-    protected $context;
+    use MainContextAwareTrait;
 
     /**
      * Cache for logInWithPermission()
      */
     protected $cache_generatedMembers = array();
-
-    /**
-     * Initializes context.
-     * Every scenario gets it's own context object.
-     *
-     * @param array $parameters context parameters (set them up through behat.yml)
-     */
-    public function __construct(array $parameters)
-    {
-        // Initialize your context here
-        $this->context = $parameters;
-    }
-
-    /**
-     * Get Mink session from MinkContext
-     */
-    public function getSession($name = null)
-    {
-        return $this->getMainContext()->getSession($name);
-    }
 
     /**
      * @Given /^I am logged in$/
@@ -55,11 +31,11 @@ class LoginContext extends BehatContext
         $adminUrl = $c->joinUrlParts($c->getBaseUrl(), $c->getAdminUrl());
         $loginUrl = $c->joinUrlParts($c->getBaseUrl(), $c->getLoginUrl());
 
-        $this->getSession()->visit($adminUrl);
+        $this->getMainContext()->getSession()->visit($adminUrl);
 
-        if (0 == strpos($this->getSession()->getCurrentUrl(), $loginUrl)) {
+        if (0 == strpos($this->getMainContext()->getSession()->getCurrentUrl(), $loginUrl)) {
             $this->stepILogInWith('admin', 'password');
-            assertStringStartsWith($adminUrl, $this->getSession()->getCurrentUrl());
+            assertStringStartsWith($adminUrl, $this->getMainContext()->getSession()->getCurrentUrl());
         }
     }
 
@@ -68,26 +44,29 @@ class LoginContext extends BehatContext
      * Example: Given I am logged in with "ADMIN" permissions
      *
      * @Given /^I am logged in with "([^"]*)" permissions$/
+     * @param string $permCode
      */
     public function iAmLoggedInWithPermissions($permCode)
     {
+        $email = "{$permCode}@example.org";
+        $password = 'Secret!123';
         if (!isset($this->cache_generatedMembers[$permCode])) {
             $group = Group::get()->filter('Title', "$permCode group")->first();
             if (!$group) {
-                $group = Injector::inst()->create('SilverStripe\\Security\\Group');
+                $group = Group::create();
             }
 
             $group->Title = "$permCode group";
             $group->write();
 
-            $permission = Injector::inst()->create('SilverStripe\\Security\\Permission');
+            $permission = Permission::create();
             $permission->Code = $permCode;
             $permission->write();
             $group->Permissions()->add($permission);
 
-            $member = DataObject::get_one('SilverStripe\\Security\\Member', sprintf('"Email" = \'%s\'', "$permCode@example.org"));
+            $member = Member::get()->filter('Email', $email)->first();
             if (!$member) {
-                $member = Injector::inst()->create('SilverStripe\\Security\\Member');
+                $member = Member::create();
             }
 
             // make sure any validation for password is skipped, since we're not testing complexity here
@@ -95,17 +74,16 @@ class LoginContext extends BehatContext
             Member::set_password_validator(null);
             $member->FirstName = $permCode;
             $member->Surname = "User";
-            $member->Email = "$permCode@example.org";
+            $member->Email = $email;
             $member->PasswordEncryption = "none";
-            $member->changePassword('Secret!123');
+            $member->changePassword($password);
             $member->write();
             $group->Members()->add($member);
             Member::set_password_validator($validator);
 
             $this->cache_generatedMembers[$permCode] = $member;
         }
-
-        return new Step\Given(sprintf('I log in with "%s" and "%s"', "$permCode@example.org", 'Secret!123'));
+        $this->stepILogInWith($email, $password);
     }
 
     /**
@@ -114,23 +92,26 @@ class LoginContext extends BehatContext
     public function stepIAmNotLoggedIn()
     {
         $c = $this->getMainContext();
-        $this->getSession()->visit($c->joinUrlParts($c->getBaseUrl(), 'Security/logout'));
+        $this->getMainContext()->getSession()->visit($c->joinUrlParts($c->getBaseUrl(), 'Security/logout'));
     }
 
-     /**
+    /**
      * @When /^I log in with "(?<username>[^"]*)" and "(?<password>[^"]*)"$/
+     * @param string $email
+     * @param string $password
      */
     public function stepILogInWith($email, $password)
     {
         $c = $this->getMainContext();
         $loginUrl = $c->joinUrlParts($c->getBaseUrl(), $c->getLoginUrl());
-        $this->getSession()->visit($loginUrl);
-        $page = $this->getSession()->getPage();
+        $this->getMainContext()->getSession()->visit($loginUrl);
+        $page = $this->getMainContext()->getSession()->getPage();
         $forms = $page->findAll('xpath', '//form[contains(@action, "Security/LoginForm")]');
         assertNotNull($forms, 'Login form not found');
 
         // Try to find visible forms again on login page.
         $visibleForm = null;
+        /** @var NodeElement $form */
         foreach ($forms as $form) {
             if ($form->isVisible() && $form->find('css', '[name=Email]')) {
                 $visibleForm = $form;
@@ -147,8 +128,7 @@ class LoginContext extends BehatContext
         assertNotNull($emailField, 'Email field on login form not found');
         assertNotNull($passwordField, 'Password field on login form not found');
         assertNotNull($submitButton, 'Submit button on login form not found');
-        // @todo Once CSRF is mandatory, uncomment this
-        // assertNotNull($securityID, 'CSRF token not found');
+        assertNotNull($securityID, 'CSRF token not found');
 
         $emailField->setValue($email);
         $passwordField->setValue($password);
@@ -160,28 +140,33 @@ class LoginContext extends BehatContext
      */
     public function stepIShouldSeeALogInForm()
     {
-        $page = $this->getSession()->getPage();
+        $page = $this->getMainContext()->getSession()->getPage();
         $loginForm = $page->find('css', '#MemberLoginForm_LoginForm');
         assertNotNull($loginForm, 'I should see a log-in form');
     }
 
     /**
      * @Then /^I will see a "([^"]*)" log-in message$/
+     * @param string $type
      */
     public function stepIWillSeeALogInMessage($type)
     {
-        $page = $this->getSession()->getPage();
+        $page = $this->getMainContext()->getSession()->getPage();
         $message = $page->find('css', sprintf('.message.%s', $type));
         assertNotNull($message, sprintf('%s message not found.', $type));
     }
 
     /**
      * @Then /^the password for "([^"]*)" should be "([^"]*)"$/
+     * @skipUpgrade
+     * @param string $id
+     * @param string $password
      */
     public function stepPasswordForEmailShouldBe($id, $password)
     {
-        $member = Member::get()->filter('SilverStripe\\Control\\Email\\Email', $id)->First();
+        /** @var Member $member */
+        $member = Member::get()->filter('Email', $id)->First();
         assertNotNull($member);
-        assertTrue($member->checkPassword($password)->valid());
+        assertTrue($member->checkPassword($password)->isValid());
     }
 }

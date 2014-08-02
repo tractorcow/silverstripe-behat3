@@ -1,0 +1,36 @@
+parameters:
+  silverstripe_extension.context.initializer.class: SilverStripe\BehatExtension\Context\Initializer\SilverStripeAwareInitializer
+  silverstripe_extension.context.class_guesser.class: SilverStripe\BehatExtension\Context\ClassGuesser\ModuleContextClassGuesser
+# Moved to PHP. See Extension::load()
+#  console.processor.locator.class: SilverStripe\BehatExtension\Controllers\LocatorProcessor
+
+# Custom init processory temporarily removed
+#  console.processor.init.class: SilverStripe\BehatExtension\Controllers\InitProcessor
+  silverstripe_extension.context.namespace_suffix: Test\Behaviour
+  silverstripe_extension.ajax_steps: ~
+  silverstripe_extension.ajax_timeout: ~
+  silverstripe_extension.admin_url: ~
+  silverstripe_extension.login_url: ~
+  silverstripe_extension.screenshot_path: ~
+  silverstripe_extension.module:
+  silverstripe_extension.region_map: ~
+  silverstripe_extension.context.path_suffix: tests/behat/features/
+services:
+  silverstripe_extension.context.initializer:
+    class: %silverstripe_extension.context.initializer.class%
+    calls:
+      - [setAjaxSteps, [%silverstripe_extension.ajax_steps%]]
+      - [setAjaxTimeout, [%silverstripe_extension.ajax_timeout%]]
+      - [setAdminUrl, [%silverstripe_extension.admin_url%]]
+      - [setLoginUrl, [%silverstripe_extension.login_url%]]
+      - [setScreenshotPath, [%silverstripe_extension.screenshot_path%]]
+      - [setRegionMap, [%silverstripe_extension.region_map%]]
+    tags:
+      - { name: context.initializer }
+  silverstripe_extension.context.class_guesser:
+    class: %silverstripe_extension.context.class_guesser.class%
+    arguments:
+      - %silverstripe_extension.context.namespace_suffix%
+      - FeatureContext
+    tags:
+      - { name: silverstripe_extension.context.class_guesser.class, priority: 10 }
