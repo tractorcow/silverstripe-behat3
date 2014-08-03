@@ -7,7 +7,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 
-use Behat\Behat\Extension\ExtensionInterface;
+use Behat\Testwork\ServiceContainer\ExtensionManager;
+use Behat\Testwork\ServiceContainer\Extension as ExtensionInterface;
 
 /*
  * This file is part of the SilverStripe\BehatExtension
@@ -26,12 +27,28 @@ use Behat\Behat\Extension\ExtensionInterface;
 class Extension implements ExtensionInterface
 {
     /**
-     * Loads a specific configuration.
-     *
-     * @param array            $config    Extension configuration hash (from behat.yml)
-     * @param ContainerBuilder $container ContainerBuilder instance
+    * Extension configuration ID.
+    */
+    const SILVERSTRIPE_ID = 'silverstripe_extension';
+
+
+    /**
+    * {@inheritDoc}
+    */
+    public function getConfigKey() {
+        return self::SILVERSTRIPE_ID;
+    }
+
+    /**
+    * {@inheritDoc}
+    */
+    public function initialize(ExtensionManager $extensionManager) {
+    }
+
+    /**
+     * {@inheritDoc}
      */
-    public function load(array $config, ContainerBuilder $container)
+    public function load(ContainerBuilder $container, array $config)
     {
         if (!isset($config['framework_path'])) {
             throw new \InvalidArgumentException('Specify `framework_path` parameter for silverstripe_extension');
@@ -40,7 +57,7 @@ class Extension implements ExtensionInterface
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/services'));
         $loader->load('silverstripe.yml');
 
-        $behatBasePath = $container->getParameter('behat.paths.base');
+        $behatBasePath = $container->getParameter('paths.base');
         $config['framework_path'] = realpath(sprintf(
             '%s%s%s',
             rtrim($behatBasePath, DIRECTORY_SEPARATOR),
@@ -60,27 +77,21 @@ class Extension implements ExtensionInterface
             $container->setParameter('behat.silverstripe_extension.ajax_steps', $config['ajax_steps']);
         }
         if (isset($config['region_map'])) {
-            $container->setParameter('behat.silverstripe_extension.region_map', $config['region_map']);
+             $container->setParameter('behat.silverstripe_extension.region_map', $config['region_map']);
         }
         $container->setParameter('behat.silverstripe_extension.bootstrap_file', $config['bootstrap_file']);
     }
 
     /**
-     * @return array
+     * {@inheritDoc}
      */
-    public function getCompilerPasses()
+    public function process(ContainerBuilder $container)
     {
-        return array(
-            new Compiler\CoreInitializationPass()
-        );
+        $corePass = new Compiler\CoreInitializationPass();
+        $corePass->process($container);
     }
 
-    /**
-     * Setups configuration for current extension.
-     *
-     * @param ArrayNodeDefinition $builder
-     */
-    public function getConfig(ArrayNodeDefinition $builder)
+    public function configure(ArrayNodeDefinition $builder)
     {
         $builder->
             children()->

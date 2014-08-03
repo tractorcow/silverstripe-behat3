@@ -2,8 +2,9 @@
 
 namespace SilverStripe\BehatExtension\Context\Initializer;
 
-use Behat\Behat\Context\Initializer\InitializerInterface;
-use Behat\Behat\Context\ContextInterface;
+use Behat\Behat\Context\Initializer\ContextInitializer,
+Behat\Behat\Context\Context;
+
 use SilverStripe\BehatExtension\Context\SilverStripeAwareContextInterface;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
@@ -23,7 +24,7 @@ use SilverStripe\Dev\SapphireTest;
  *
  * @author Michał Ochman <ochman.d.michal@gmail.com>
  */
-class SilverStripeAwareInitializer implements InitializerInterface
+class SilverStripeAwareInitializer implements ContextInitializer
 {
 
     private $databaseName;
@@ -117,7 +118,7 @@ class SilverStripeAwareInitializer implements InitializerInterface
      *
      * @param ContextInterface $context
      */
-    public function initialize(ContextInterface $context)
+    public function initializeContext(Context $context)
     {
         $context->setDatabase($this->databaseName);
         $context->setAjaxSteps($this->ajaxSteps);

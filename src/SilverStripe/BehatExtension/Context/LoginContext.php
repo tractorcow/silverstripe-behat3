@@ -2,12 +2,13 @@
 
 namespace SilverStripe\BehatExtension\Context;
 
-use Behat\Behat\Context\BehatContext;
-use Behat\Behat\Context\Step;
-use SilverStripe\Core\Injector\Injector;
-use SilverStripe\ORM\DataObject;
-use SilverStripe\Security\Group;
-use SilverStripe\Security\Member;
+use Behat\Behat\Context\ClosuredContextInterface,
+Behat\Behat\Context\TranslatedContextInterface,
+Behat\Behat\Context\BehatContext,
+Behat\Behat\Definition\Call,
+Behat\Behat\Exception\PendingException;
+use Behat\Gherkin\Node\PyStringNode,
+Behat\Gherkin\Node\TableNode;
 
 // PHPUnit
 require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions.php';
@@ -66,7 +67,7 @@ class LoginContext extends BehatContext
     /**
      * Creates a member in a group with the correct permissions.
      * Example: Given I am logged in with "ADMIN" permissions
-     *
+     * 
      * @Given /^I am logged in with "([^"]*)" permissions$/
      */
     public function iAmLoggedInWithPermissions($permCode)
@@ -76,7 +77,7 @@ class LoginContext extends BehatContext
             if (!$group) {
                 $group = Injector::inst()->create('SilverStripe\\Security\\Group');
             }
-
+ 
             $group->Title = "$permCode group";
             $group->write();
 
@@ -105,7 +106,7 @@ class LoginContext extends BehatContext
             $this->cache_generatedMembers[$permCode] = $member;
         }
 
-        return new Step\Given(sprintf('I log in with "%s" and "%s"', "$permCode@example.org", 'Secret!123'));
+        return new Call\Given(sprintf('I log in with "%s" and "%s"', "$permCode@example.org", 'Secret!123'));
     }
 
     /**
@@ -121,24 +122,24 @@ class LoginContext extends BehatContext
      * @When /^I log in with "(?<username>[^"]*)" and "(?<password>[^"]*)"$/
      */
     public function stepILogInWith($email, $password)
-    {
-        $c = $this->getMainContext();
-        $loginUrl = $c->joinUrlParts($c->getBaseUrl(), $c->getLoginUrl());
-        $this->getSession()->visit($loginUrl);
-        $page = $this->getSession()->getPage();
-        $forms = $page->findAll('xpath', '//form[contains(@action, "Security/LoginForm")]');
+    {        
+            $c = $this->getMainContext();
+            $loginUrl = $c->joinUrlParts($c->getBaseUrl(), $c->getLoginUrl());
+            $this->getSession()->visit($loginUrl);
+            $page = $this->getSession()->getPage();
+            $forms = $page->findAll('xpath', '//form[contains(@action, "Security/LoginForm")]');
         assertNotNull($forms, 'Login form not found');
 
         // Try to find visible forms again on login page.
         $visibleForm = null;
-        foreach ($forms as $form) {
-            if ($form->isVisible() && $form->find('css', '[name=Email]')) {
+        foreach($forms as $form) {
+            if($form->isVisible() && $form->find('css', '[name=Email]')) {
                 $visibleForm = $form;
             }
         }
 
         assertNotNull($visibleForm, 'Could not find login form');
-
+        
         $emailField = $visibleForm->find('css', '[name=Email]');
         $passwordField = $visibleForm->find('css', '[name=Password]');
         $submitButton = $visibleForm->find('css', '[type=submit]');
@@ -152,7 +153,7 @@ class LoginContext extends BehatContext
 
         $emailField->setValue($email);
         $passwordField->setValue($password);
-        $submitButton->press();
+        $submitButton->press(); 
     }
 
     /**

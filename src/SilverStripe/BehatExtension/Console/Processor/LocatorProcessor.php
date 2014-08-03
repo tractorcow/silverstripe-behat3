@@ -56,8 +56,8 @@ class LocatorProcessor extends BaseProcessor
     public function process(InputInterface $input, OutputInterface $output)
     {
         $featuresPath = $input->getArgument('features');
-
-        // Can't use 'behat.paths.base' since that's locked at this point to base folder (not module)
+        
+        // Can't use 'paths.base' since that's locked at this point to base folder (not module)
         $pathSuffix   = $this->container->getParameter('behat.silverstripe_extension.context.path_suffix');
 
         $currentModuleName = null;
@@ -105,7 +105,7 @@ class LocatorProcessor extends BaseProcessor
             $featuresPath = $currentModulePath.DIRECTORY_SEPARATOR.$pathSuffix.DIRECTORY_SEPARATOR.$featuresPath;
         }
 
-        if ($input->getOption('namespace')) {
+        if($input->getOption('namespace')) {
             $namespace = $input->getOption('namespace');
         } else {
             $namespace = ucfirst($currentModuleName);

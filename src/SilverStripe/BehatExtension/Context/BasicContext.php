@@ -2,10 +2,13 @@
 
 namespace SilverStripe\BehatExtension\Context;
 
-use Behat\Behat\Context\BehatContext;
-use Behat\Behat\Context\Step;
-use Behat\Behat\Event\StepEvent;
-use Behat\Behat\Event\ScenarioEvent;
+use Behat\Behat\Context\ClosuredContextInterface,
+    Behat\Behat\Context\TranslatedContextInterface,
+    Behat\Behat\Context\BehatContext,
+    Behat\Behat\Definition\Call,
+    Behat\Behat\Event\StepEvent,
+    Behat\Behat\Event\ScenarioEvent,
+    Behat\Behat\Exception\PendingException;
 use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Session;
@@ -29,22 +32,22 @@ class BasicContext extends BehatContext
     protected $context;
 
     /**
-     * Date format in date() syntax
-     * @var String
-     */
-    protected $dateFormat = 'Y-m-d';
+	 * Date format in date() syntax
+	 * @var String
+	 */
+	protected $dateFormat = 'Y-m-d';
 
-    /**
-     * Time format in date() syntax
-     * @var String
-     */
-    protected $timeFormat = 'H:i:s';
+	/**
+	 * Time format in date() syntax
+	 * @var String
+	 */
+	protected $timeFormat = 'H:i:s';
 
-    /**
-     * Date/time format in date() syntax
-     * @var String
-     */
-    protected $datetimeFormat = 'Y-m-d H:i:s';
+	/**
+	 * Date/time format in date() syntax
+	 * @var String
+	 */
+	protected $datetimeFormat = 'Y-m-d H:i:s';
 
     /**
      * Initializes context.
@@ -80,14 +83,14 @@ class BasicContext extends BehatContext
     public function appendErrorHandlerBeforeStep(StepEvent $event)
     {
         try {
-            $javascript = <<<JS
+        $javascript = <<<JS
 window.onerror = function(message, file, line, column, error) {
     var body = document.getElementsByTagName('body')[0];
 	var msg = message + " in " + file + ":" + line + ":" + column;
 	if(error !== undefined && error.stack !== undefined) {
 		msg += "\\nSTACKTRACE:\\n" + error.stack;
 	}
-	body.setAttribute('data-jserrors', '[captured JavaScript error] ' + msg);
+    body.setAttribute('data-jserrors', '[captured JavaScript error] ' + msg);
 }
 if ('undefined' !== typeof window.jQuery) {
     window.jQuery('body').ajaxError(function(event, jqxhr, settings, exception) {
@@ -97,7 +100,7 @@ if ('undefined' !== typeof window.jQuery) {
 }
 JS;
 
-            $this->getSession()->executeScript($javascript);
+        $this->getSession()->executeScript($javascript);
         } catch (\WebDriver\Exception $e) {
             $this->logException($e);
         }
@@ -112,15 +115,15 @@ JS;
     public function readErrorHandlerAfterStep(StepEvent $event)
     {
         try {
-            $page = $this->getSession()->getPage();
+        $page = $this->getSession()->getPage();
 
-            $jserrors = $page->find('xpath', '//body[@data-jserrors]');
-            if (null !== $jserrors) {
-                $this->takeScreenshot($event);
-                file_put_contents('php://stderr', $jserrors->getAttribute('data-jserrors') . PHP_EOL);
-            }
+        $jserrors = $page->find('xpath', '//body[@data-jserrors]');
+        if (null !== $jserrors) {
+            $this->takeScreenshot($event);
+            file_put_contents('php://stderr', $jserrors->getAttribute('data-jserrors') . PHP_EOL);
+        }
 
-            $javascript = <<<JS
+        $javascript = <<<JS
 if ('undefined' !== typeof window.jQuery) {
 	window.jQuery(document).ready(function() {
 		window.jQuery('body').removeAttr('data-jserrors');
@@ -128,10 +131,10 @@ if ('undefined' !== typeof window.jQuery) {
 }
 JS;
 
-            $this->getSession()->executeScript($javascript);
+        $this->getSession()->executeScript($javascript);
         } catch (\WebDriver\Exception $e) {
             $this->logException($e);
-        }
+    }
     }
 
     /**
@@ -144,14 +147,14 @@ JS;
     public function handleAjaxBeforeStep(StepEvent $event)
     {
         try {
-            $ajaxEnabledSteps = $this->getMainContext()->getAjaxSteps();
-            $ajaxEnabledSteps = implode('|', array_filter($ajaxEnabledSteps));
+        $ajaxEnabledSteps = $this->getMainContext()->getAjaxSteps();
+        $ajaxEnabledSteps = implode('|', array_filter($ajaxEnabledSteps));
 
-            if (empty($ajaxEnabledSteps) || !preg_match('/(' . $ajaxEnabledSteps . ')/i', $event->getStep()->getText())) {
-                return;
-            }
+        if (empty($ajaxEnabledSteps) || !preg_match('/(' . $ajaxEnabledSteps . ')/i', $event->getStep()->getText())) {
+            return;
+        }
 
-            $javascript = <<<JS
+        $javascript = <<<JS
 if ('undefined' !== typeof window.jQuery && 'undefined' !== typeof window.jQuery.fn.on) {
     window.jQuery(document).on('ajaxStart.ss.test.behaviour', function(){
         window.__ajaxStatus = function() {
@@ -174,11 +177,11 @@ if ('undefined' !== typeof window.jQuery && 'undefined' !== typeof window.jQuery
     });
 }
 JS;
-            $this->getSession()->wait(500); // give browser a chance to process and render response
-            $this->getSession()->executeScript($javascript);
+        $this->getSession()->wait(500); // give browser a chance to process and render response
+        $this->getSession()->executeScript($javascript);
         } catch (\WebDriver\Exception $e) {
             $this->logException($e);
-        }
+    }
     }
 
     /**
@@ -192,26 +195,26 @@ JS;
     public function handleAjaxAfterStep(StepEvent $event)
     {
         try {
-            $ajaxEnabledSteps = $this->getMainContext()->getAjaxSteps();
-            $ajaxEnabledSteps = implode('|', array_filter($ajaxEnabledSteps));
+        $ajaxEnabledSteps = $this->getMainContext()->getAjaxSteps();
+        $ajaxEnabledSteps = implode('|', array_filter($ajaxEnabledSteps));
 
-            if (empty($ajaxEnabledSteps) || !preg_match('/(' . $ajaxEnabledSteps . ')/i', $event->getStep()->getText())) {
-                return;
-            }
+        if (empty($ajaxEnabledSteps) || !preg_match('/(' . $ajaxEnabledSteps . ')/i', $event->getStep()->getText())) {
+            return;
+        }
 
-            $this->handleAjaxTimeout();
+        $this->handleAjaxTimeout();
 
-            $javascript = <<<JS
+        $javascript = <<<JS
 if ('undefined' !== typeof window.jQuery && 'undefined' !== typeof window.jQuery.fn.off) {
 window.jQuery(document).off('ajaxStart.ss.test.behaviour');
 window.jQuery(document).off('ajaxComplete.ss.test.behaviour');
 window.jQuery(document).off('ajaxSuccess.ss.test.behaviour');
 }
 JS;
-            $this->getSession()->executeScript($javascript);
+        $this->getSession()->executeScript($javascript);
         } catch (\WebDriver\Exception $e) {
             $this->logException($e);
-        }
+    }
     }
 
     public function handleAjaxTimeout()
@@ -238,7 +241,7 @@ JS;
     {
         if (4 === $event->getResult()) {
             try {
-                $this->takeScreenshot($event);
+            $this->takeScreenshot($event);
             } catch (\WebDriver\Exception $e) {
                 $this->logException($e);
             }
@@ -263,8 +266,8 @@ JS;
                         $this->getSession()->getDriver()->getWebDriverSession()->accept_alert();
                     } catch (\WebDriver\Exception $e) {
                         // no-op, alert might not be present
-                    }
-                }
+        }
+    }
             }
         } catch (\WebDriver\Exception $e) {
             $this->logException($e);
@@ -273,7 +276,7 @@ JS;
 
     /**
      * Delete any created files and folders from assets directory
-     *
+     * 
      * @AfterScenario @assets
      */
     public function cleanAssetsAfterScenario(ScenarioEvent $event)
@@ -304,7 +307,7 @@ JS;
 
         Filesystem::makeFolder($path);
         $path = realpath($path);
-
+        
         if (!file_exists($path)) {
             file_put_contents('php://stderr', sprintf('"%s" is not valid directory and failed to create it' . PHP_EOL, $path));
             return;
@@ -344,7 +347,7 @@ JS;
     /**
      * @Given /^the page can't be found/
      */
-    public function stepPageCantBeFound()
+    public function stepPageCantBeFound() 
     {
         $page = $this->getSession()->getPage();
         assertTrue(
@@ -385,7 +388,7 @@ JS;
             foreach ($buttons as $el) {
                 if ($el->isVisible()) {
                     return $el;
-                }
+        }
             }
         }
         return null;
@@ -404,7 +407,7 @@ JS;
             assertNull($matchedEl, sprintf('%s button found', $text));
         } else {
             assertNotNull($matchedEl, sprintf('%s button not found', $text));
-        }
+    }
     }
 
     /**
@@ -419,9 +422,9 @@ JS;
 
     /**
      * Needs to be in single command to avoid "unexpected alert open" errors in Selenium.
-     * Example1: I press the "Remove current combo" button, confirming the dialog
+     * Example1: I press the "Remove current combo" button, confirming the dialog 
      * Example2: I follow the "Remove current combo" link, confirming the dialog
-     *
+     * 
      * @Given /^I (?:press|follow) the "([^"]*)" (?:button|link), confirming the dialog$/
      */
     public function stepIPressTheButtonConfirmingTheDialog($button)
@@ -433,13 +436,13 @@ JS;
     /**
      * Needs to be in single command to avoid "unexpected alert open" errors in Selenium.
      * Example: I follow the "Remove current combo" link, dismissing the dialog
-     *
+     * 
      * @Given /^I (?:press|follow) the "([^"]*)" (?:button|link), dismissing the dialog$/
      */
     public function stepIPressTheButtonDismissingTheDialog($button)
     {
-        $this->stepIPressTheButton($button);
-        $this->iDismissTheDialog();
+		$this->stepIPressTheButton($button);
+		$this->iDismissTheDialog();
     }
 
     /**
@@ -540,37 +543,37 @@ JS;
         $this->getSession()->executeScript($js);
         $this->getSession()->wait(1000);
 
-        return new Step\Given(sprintf('I attach the file "%s" to "%s"', $path, $field));
+        return new Call\Given(sprintf('I attach the file "%s" to "%s"', $path, $field));
     }
 
-    /**
-     * Select an individual input from within a group, matched by the top-most label.
-     *
-     * @Given /^I select "([^"]*)" from "([^"]*)" input group$/
-     */
+	/**
+	 * Select an individual input from within a group, matched by the top-most label.
+	 *
+	 * @Given /^I select "([^"]*)" from "([^"]*)" input group$/
+	 */
     public function iSelectFromInputGroup($value, $labelText)
     {
-        $page = $this->getSession()->getPage();
-        $parent = null;
+		$page = $this->getSession()->getPage();
+		$parent = null;
 
-        foreach ($page->findAll('css', 'label') as $label) {
-            if ($label->getText() == $labelText) {
-                $parent = $label->getParent();
-            }
-        }
+		foreach($page->findAll('css', 'label') as $label) {
+			if($label->getText() == $labelText) {
+				$parent = $label->getParent();
+			}
+		}
 
         if (!$parent) {
             throw new \InvalidArgumentException(sprintf('Input group with label "%s" cannot be found', $labelText));
         }
 
-        foreach ($parent->findAll('css', 'label') as $option) {
-            if ($option->getText() == $value) {
+		foreach($parent->findAll('css', 'label') as $option) {
+			if($option->getText() == $value) {
                 $input = null;
 
                 // First, look for inputs referenced by the "for" element on this label
-                $for = $option->getAttribute('for');
+				$for = $option->getAttribute('for');
                 if ($for) {
-                    $input = $parent->findById($for);
+				$input = $parent->findById($for);
                 }
 
                 // Otherwise look for inputs _inside_ the label
@@ -582,10 +585,10 @@ JS;
                     throw new \InvalidArgumentException(sprintf('Input "%s" cannot be found', $value));
                 }
 
-                $this->getSession()->getDriver()->click($input->getXPath());
-            }
-        }
-    }
+				$this->getSession()->getDriver()->click($input->getXPath());
+			}
+		}
+	}
 
     /**
      * Pauses the scenario until the user presses a key. Useful when debugging a scenario.
@@ -602,92 +605,92 @@ JS;
         return;
     }
 
-    /**
-     * Transforms relative time statements compatible with strtotime().
-     * Example: "time of 1 hour ago" might return "22:00:00" if its currently "23:00:00".
-     * Customize through {@link setTimeFormat()}.
-     *
-     * @Transform /^(?:(the|a)) time of (?<val>.*)$/
-     */
+	/**
+	 * Transforms relative time statements compatible with strtotime().
+	 * Example: "time of 1 hour ago" might return "22:00:00" if its currently "23:00:00".
+	 * Customize through {@link setTimeFormat()}.
+	 * 
+	 * @Transform /^(?:(the|a)) time of (?<val>.*)$/
+	 */
     public function castRelativeToAbsoluteTime($prefix, $val)
     {
-        $timestamp = strtotime($val);
-        if (!$timestamp) {
-            throw new \InvalidArgumentException(sprintf(
-                "Can't resolve '%s' into a valid datetime value",
-                $val
-            ));
-        }
-        return date($this->timeFormat, $timestamp);
-    }
+		$timestamp = strtotime($val);
+		if(!$timestamp) {
+			throw new \InvalidArgumentException(sprintf(
+				"Can't resolve '%s' into a valid datetime value",
+				$val
+			));
+		}
+		return date($this->timeFormat, $timestamp);
+	}
 
-    /**
-     * Transforms relative date and time statements compatible with strtotime().
-     * Example: "datetime of 2 days ago" might return "2013-10-10 22:00:00" if its currently
-     * the 12th of October 2013. Customize through {@link setDatetimeFormat()}.
-     *
-     * @Transform /^(?:(the|a)) datetime of (?<val>.*)$/
-     */
+	/**
+	 * Transforms relative date and time statements compatible with strtotime().
+	 * Example: "datetime of 2 days ago" might return "2013-10-10 22:00:00" if its currently 
+	 * the 12th of October 2013. Customize through {@link setDatetimeFormat()}.
+	 * 
+	 * @Transform /^(?:(the|a)) datetime of (?<val>.*)$/
+	 */
     public function castRelativeToAbsoluteDatetime($prefix, $val)
     {
-        $timestamp = strtotime($val);
-        if (!$timestamp) {
-            throw new \InvalidArgumentException(sprintf(
-                "Can't resolve '%s' into a valid datetime value",
-                $val
-            ));
-        }
-        return date($this->datetimeFormat, $timestamp);
-    }
+		$timestamp = strtotime($val);
+		if(!$timestamp) {
+			throw new \InvalidArgumentException(sprintf(
+				"Can't resolve '%s' into a valid datetime value",
+				$val
+			));
+		}
+		return date($this->datetimeFormat, $timestamp);
+	}
 
-    /**
-     * Transforms relative date statements compatible with strtotime().
-     * Example: "date 2 days ago" might return "2013-10-10" if its currently
-     * the 12th of October 2013. Customize through {@link setDateFormat()}.
-     *
-     * @Transform /^(?:(the|a)) date of (?<val>.*)$/
-     */
+	/**
+	 * Transforms relative date statements compatible with strtotime().
+	 * Example: "date 2 days ago" might return "2013-10-10" if its currently 
+	 * the 12th of October 2013. Customize through {@link setDateFormat()}.
+	 * 
+	 * @Transform /^(?:(the|a)) date of (?<val>.*)$/
+	 */
     public function castRelativeToAbsoluteDate($prefix, $val)
     {
-        $timestamp = strtotime($val);
-        if (!$timestamp) {
-            throw new \InvalidArgumentException(sprintf(
-                "Can't resolve '%s' into a valid datetime value",
-                $val
-            ));
-        }
-        return date($this->dateFormat, $timestamp);
-    }
+		$timestamp = strtotime($val);
+		if(!$timestamp) {
+			throw new \InvalidArgumentException(sprintf(
+				"Can't resolve '%s' into a valid datetime value",
+				$val
+			));
+		}
+		return date($this->dateFormat, $timestamp);
+	}
 
     public function getDateFormat()
     {
-        return $this->dateFormat;
-    }
+		return $this->dateFormat;
+	}
 
     public function setDateFormat($format)
     {
-        $this->dateFormat = $format;
-    }
+		$this->dateFormat = $format;
+	}
 
     public function getTimeFormat()
     {
-        return $this->timeFormat;
-    }
+		return $this->timeFormat;
+	}
 
     public function setTimeFormat($format)
     {
-        $this->timeFormat = $format;
-    }
+		$this->timeFormat = $format;
+	}
 
     public function getDatetimeFormat()
     {
-        return $this->datetimeFormat;
-    }
+		return $this->datetimeFormat;
+	}
 
     public function setDatetimeFormat($format)
     {
-        $this->datetimeFormat = $format;
-    }
+		$this->datetimeFormat = $format;
+	}
 
     /**
      * Checks that field with specified in|name|label|value is disabled.
@@ -700,50 +703,50 @@ JS;
     public function stepFieldShouldBeDisabled($name, $type, $negate)
     {
         $page = $this->getSession()->getPage();
-        if ($type == 'field') {
-            $element = $page->findField($name);
+        if($type == 'field') {
+            $element = $page->findField($name);    
         } else {
             $element = $page->find('named', array(
                 'button', $this->getSession()->getSelectorsHandler()->xpathLiteral($name)
             ));
         }
-
+        
         assertNotNull($element, sprintf("Element '%s' not found", $name));
 
         $disabledAttribute = $element->getAttribute('disabled');
-        if (trim($negate)) {
+        if(trim($negate)) {
             assertNull($disabledAttribute, sprintf("Failed asserting element '%s' is not disabled", $name));
         } else {
             assertNotNull($disabledAttribute, sprintf("Failed asserting element '%s' is disabled", $name));
         }
     }
 
-    /**
-     * Checks that checkbox with specified in|name|label|value is enabled.
-     * Example: Then the field "Email" should be enabled
-     * Example: Then the "Email" field should be enabled
-     *
-     * @Then /^the "(?P<field>(?:[^"]|\\")*)" field should be enabled/
-     * @Then /^the field "(?P<field>(?:[^"]|\\")*)" should be enabled/
-     */
+	/**
+	 * Checks that checkbox with specified in|name|label|value is enabled.
+	 * Example: Then the field "Email" should be enabled
+	 * Example: Then the "Email" field should be enabled
+	 *
+	 * @Then /^the "(?P<field>(?:[^"]|\\")*)" field should be enabled/
+	 * @Then /^the field "(?P<field>(?:[^"]|\\")*)" should be enabled/
+	 */
     public function stepFieldShouldBeEnabled($field)
     {
-        $page = $this->getSession()->getPage();
-        $fieldElement = $page->findField($field);
-        assertNotNull($fieldElement, sprintf("Field '%s' not found", $field));
+		$page = $this->getSession()->getPage();
+		$fieldElement = $page->findField($field);
+		assertNotNull($fieldElement, sprintf("Field '%s' not found", $field));
 
-        $disabledAttribute = $fieldElement->getAttribute('disabled');
+		$disabledAttribute = $fieldElement->getAttribute('disabled');
 
-        assertNull($disabledAttribute, sprintf("Failed asserting field '%s' is enabled", $field));
-    }
+		assertNull($disabledAttribute, sprintf("Failed asserting field '%s' is enabled", $field));
+	}
 
     /**
      * Clicks a link in a specific region (an element identified by a CSS selector, a "data-title" attribute,
      * or a named region mapped to a CSS selector via Behat configuration).
-     *
-     * Example: Given I follow "Select" in the "header .login-form" region
-     * Example: Given I follow "Select" in the "My Login Form" region
-     *
+     * 
+     * Example: Given I follow "Select" in the "header .login-form" region 
+     * Example: Given I follow "Select" in the "My Login Form" region 
+     * 
      * @Given /^I (?:follow|click) "(?P<link>[^"]*)" in the "(?P<region>[^"]*)" region$/
      */
     public function iFollowInTheRegion($link, $region)
@@ -751,18 +754,18 @@ JS;
         $context = $this->getMainContext();
         $regionObj = $context->getRegionObj($region);
         assertNotNull($regionObj);
-
+        
         $linkObj = $regionObj->findLink($link);
         if (empty($linkObj)) {
             throw new \Exception(sprintf('The link "%s" was not found in the region "%s" 
 				on the page %s', $link, $region, $this->getSession()->getCurrentUrl()));
         }
 
-        $linkObj->click();
+        $linkObj->click();        
     }
 
     /**
-     * Fills in a field in a specfic region similar to (@see iFollowInTheRegion or @see iSeeTextInRegion)
+     * Fills in a field in a specfic region similar to (@see iFollowInTheRegion or @see iSeeTextInRegion) 
      *
      * Example: Given I fill in "Hello" with "World"
      *
@@ -782,16 +785,16 @@ JS;
 
         $regionObj->fillField($field, $value);
     }
-
+    
 
     /**
      * Asserts text in a specific region (an element identified by a CSS selector, a "data-title" attribute,
      * or a named region mapped to a CSS selector via Behat configuration).
      * Supports regular expressions in text value.
-     *
-     * Example: Given I should see "My Text" in the "header .login-form" region
-     * Example: Given I should not see "My Text" in the "My Login Form" region
-     *
+     * 
+     * Example: Given I should see "My Text" in the "header .login-form" region 
+     * Example: Given I should not see "My Text" in the "My Login Form" region 
+     * 
      * @Given /^I should (?P<negate>(?:(not |)))see "(?P<text>[^"]*)" in the "(?P<region>[^"]*)" region$/
      */
     public function iSeeTextInRegion($negate, $text, $region)
@@ -804,10 +807,10 @@ JS;
         $actual = preg_replace('/\s+/u', ' ', $actual);
         $regex  = '/'.preg_quote($text, '/').'/ui';
 
-        if (trim($negate)) {
+        if(trim($negate)) {
             if (preg_match($regex, $actual)) {
                 $message = sprintf(
-                    'The text "%s" was found in the text of the "%s" region on the page %s.',
+                    'The text "%s" was found in the text of the "%s" region on the page %s.', 
                     $text,
                     $region,
                     $this->getSession()->getCurrentUrl()
@@ -829,20 +832,20 @@ JS;
         }
     }
 
-    /**
-     * Selects the specified radio button
-     *
-     * @Given /^I select the "([^"]*)" radio button$/
-     */
+	/**
+	 * Selects the specified radio button
+	 * 
+	 * @Given /^I select the "([^"]*)" radio button$/
+	 */
     public function iSelectTheRadioButton($radioLabel)
     {
-        $session = $this->getSession();
-        $radioButton = $session->getPage()->find('named', array(
+		$session = $this->getSession();
+		$radioButton = $session->getPage()->find('named', array(
                       'radio', $this->getSession()->getSelectorsHandler()->xpathLiteral($radioLabel)
                   ));
-        assertNotNull($radioButton);
-        $session->getDriver()->click($radioButton->getXPath());
-    }
+		assertNotNull($radioButton);
+		$session->getDriver()->click($radioButton->getXPath());
+	}
 
     /**
      * @Then /^the "([^"]*)" table should contain "([^"]*)"$/
@@ -914,8 +917,8 @@ JS;
         assertTrue((bool)$candidates, 'Could not find any table elements');
 
         $table = null;
-        foreach ($candidates as $candidate) {
-            if (!$table && $candidate->isVisible()) {
+        foreach($candidates as $candidate) {
+            if(!$table && $candidate->isVisible()) {
                 $table = $candidate;
             }
         }
