@@ -36,6 +36,11 @@ class FixtureContext extends BehatContext
 	 */
 	protected $createdFilesPaths = array();
 
+	/**
+	 * @var array Stores the asset tuples.
+	 */
+	protected $createdAssets = array();
+
 	public function __construct(array $parameters) {
 		$this->context = $parameters;
 	}
@@ -99,14 +104,10 @@ class FixtureContext extends BehatContext
 	 * @AfterScenario
 	 */
 	public function afterResetAssets(ScenarioEvent $event) {
-		if (is_array($this->createdFilesPaths)) {
-			$createdFiles = array_reverse($this->createdFilesPaths);
-			foreach ($createdFiles as $path) {
-				if (is_dir($path)) {
-					\Filesystem::removeFolder($path);
-				} else {
-					@unlink($path);
-				}
+		$store = $this->getAssetStore();
+		if (is_array($this->createdAssets)) {
+			foreach ($this->createdAssets as $asset) {
+				$store->delete($asset['Filename'], $asset['Hash']);
 			}
 		}
 	}
@@ -551,8 +552,10 @@ class FixtureContext extends BehatContext
 			$parent = \Folder::find_or_make($relativeTargetPath);
 			$targetPath = $this->joinPaths(ASSETS_PATH, $relativeTargetPath);
 			$data['ID'] = $parent->ID;
+			$this->createdAssets[] = $parent->File->getValue();
 		} else {
 			$parent = \Folder::find_or_make(dirname($relativeTargetPath));
+			$this->createdAssets[] = $parent->File->getValue();
 			if(!file_exists($sourcePath)) {
 				throw new \InvalidArgumentException(sprintf(
 					'Source file for "%s" cannot be found in "%s"',
@@ -568,7 +571,10 @@ class FixtureContext extends BehatContext
 				$relativeTargetPath,
 				null,
 				null,
-				AssetStore::CONFLICT_OVERWRITE
+				array(
+					'conflict' => AssetStore::CONFLICT_OVERWRITE,
+					'visibility' => AssetStore::VISIBILITY_PUBLIC
+				)
 			);
 			$data['FileFilename'] = $asset['Filename'];
 			$data['FileHash'] = $asset['Hash'];
@@ -583,6 +589,7 @@ class FixtureContext extends BehatContext
 		}
 
 		$this->createdFilesPaths[] = $targetPath;
+		$this->createdAssets[] = $data;
 
 		return $data;
 	}
