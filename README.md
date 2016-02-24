@@ -279,9 +279,6 @@ Example: mymodule/tests/behat/features/bootstrap/MyModule/Test/Behaviour/Feature
 	    SilverStripe\BehatExtension\Context\BasicContext,
 	    SilverStripe\BehatExtension\Context\LoginContext;
 
-	require_once 'PHPUnit/Autoload.php';
-	require_once 'PHPUnit/Framework/Assert/Functions.php';
-
 	class FeatureContext extends SilverStripeContext
 	{
 	    public function __construct(array $parameters)
