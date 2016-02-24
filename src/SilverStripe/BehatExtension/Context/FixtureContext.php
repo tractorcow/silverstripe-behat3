@@ -107,7 +107,7 @@ class FixtureContext extends BehatContext
 		$store = $this->getAssetStore();
 		if (is_array($this->createdAssets)) {
 			foreach ($this->createdAssets as $asset) {
-				$store->delete($asset['Filename'], $asset['Hash']);
+				$store->delete($asset['FileFilename'], $asset['FileHash']);
 			}
 		}
 	}
@@ -475,6 +475,18 @@ class FixtureContext extends BehatContext
 	}
 
 	/**
+	 * Checks that a file exists in the asset store with a given filename and hash
+	 *
+	 * Example: there should be a filename "Uploads/test.jpg" with hash "59de0c841f"
+	 *
+	 * @Then /^there should be a filename "(?<filename>[^"]*)" with hash "(?<hash>[a-fA-Z0-9]+)"/
+	 */
+	public function stepThereShouldBeAFileWithTuple($filename, $hash) {
+		$exists = $this->getAssetStore()->exists($filename, $hash);
+		assertTrue((bool)$exists, "A file exists with filename $filename and hash $hash");
+	}
+
+	/**
 	 * Replaces fixture references in values with their respective database IDs, 
 	 * with the notation "=><class>.<identifier>". Example: "=>Page.My Page".
 	 * 
@@ -547,19 +559,15 @@ class FixtureContext extends BehatContext
 		$sourcePath = $this->joinPaths($this->getFilesPath(), basename($relativeTargetPath));
 		
 		// Create file or folder on filesystem
-		$parent = null;
 		if($class == 'Folder' || is_subclass_of($class, 'Folder')) {
 			$parent = \Folder::find_or_make($relativeTargetPath);
-			$targetPath = $this->joinPaths(ASSETS_PATH, $relativeTargetPath);
 			$data['ID'] = $parent->ID;
-			$this->createdAssets[] = $parent->File->getValue();
 		} else {
 			$parent = \Folder::find_or_make(dirname($relativeTargetPath));
-			$this->createdAssets[] = $parent->File->getValue();
 			if(!file_exists($sourcePath)) {
 				throw new \InvalidArgumentException(sprintf(
 					'Source file for "%s" cannot be found in "%s"',
-					$targetPath,
+					$relativeTargetPath,
 					$sourcePath
 				));
 			}
@@ -579,17 +587,15 @@ class FixtureContext extends BehatContext
 			$data['FileFilename'] = $asset['Filename'];
 			$data['FileHash'] = $asset['Hash'];
 			$data['FileVariant'] = $asset['Variant'];
-			
-			// Strip base from url to get dir relative to base
-			$url = $this->getAssetStore()->getAsURL($asset['Filename'], $asset['Hash'], $asset['Variant']);
-			$targetPath = $this->joinPaths(BASE_PATH, substr($url, strlen(\Director::baseURL())));
 		}
 		if(!isset($data['Name'])) {
 			$data['Name'] = basename($relativeTargetPath);
 		}
 
-		$this->createdFilesPaths[] = $targetPath;
-		$this->createdAssets[] = $data;
+		// Save assets
+		if(isset($data['FileFilename'])) {
+			$this->createdAssets[] = $data;
+		}
 
 		return $data;
 	}
