@@ -6,6 +6,8 @@ use SilverStripe\BehatExtension\Context\SilverStripeContext,
 
 class SilverStripeContextTest extends \PHPUnit_Framework_TestCase {
 
+	protected $backupGlobals = false;
+
 	/**
 	 * @expectedException \LogicException
 	 * @expectedExceptionMessage Cannot find 'region_map' in the behat.yml
