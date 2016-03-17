@@ -333,10 +333,10 @@ class FixtureContext extends BehatContext
 			case 'not published':
 			case 'unpublished':
 				$oldMode = \Versioned::get_reading_mode();
-				\Versioned::reading_stage('Live');
+				\Versioned::set_stage(\Versioned::LIVE);
 				$clone = clone $obj;
 				$clone->delete();
-				\Versioned::reading_stage($oldMode);
+				\Versioned::set_reading_mode($oldMode);
 				break;
 			case 'deleted':
 				$obj->delete();
