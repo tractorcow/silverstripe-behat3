@@ -73,6 +73,16 @@ in your project root, or set is as an environment variable in your terminal sess
 
 ## Usage
 
+### Prevent Firefox from Automatically Updating
+
+The moment you open Firefox, it's going to try and update itself out of the stone age. To prevent this, open a new tab and go to `about:config`. There, change the following settings to `false`:
+
+- `app.update.auto`
+- `app.update.enabled`
+- `app.update.silent`
+
+Firefox will already have started the update, so close and delete it. The settings you changed should be stored as preferences, apart from the application files you've just deleted. Reinstall that ancient version. The next time you open it, and go to "About Firefox", you should see a button desperately pleading with you to "check for updates". Don't click that if you know what's good for you...
+
 ### Starting the Selenium Server
 
 You can run the server locally in a separate Terminal session:
