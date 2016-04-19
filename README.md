@@ -56,9 +56,9 @@ If you are having issues running Selenium with your browser please check
 that you're on the [latest driver](https://code.google.com/p/selenium/downloads/list),
 since the download link above might be out of date.
 
-Ensure you have a supported version of firefox installed:
-
-	wget https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/26.0/mac/en-GB/Firefox%2026.0.dmg
+Download the latest [Firefox ESR](https://www.mozilla.org/en-US/firefox/organizations/all/) (Extended Support Release).
+It might be older than your currently installed Firefox.
+It's important to have a browser that's [supported by Selenium-Webdriver](http://docs.seleniumhq.org/docs/01_introducing_selenium.jsp#selenium-webdriver)
 
 Now install the SilverStripe project as usual by opening it in a browser and following the instructions.
 Protip: You can skip this step by using `[SS_DATABASE_CHOOSE_NAME]` in a global 
