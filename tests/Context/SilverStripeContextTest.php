@@ -4,6 +4,9 @@ namespace SilverStripe\BehatExtension\Tests;
 use SilverStripe\BehatExtension\Context\SilverStripeContext,
 	Behat\Mink\Mink;
 
+require_once 'PHPUnit/Autoload.php';
+require_once 'PHPUnit/Framework/TestCase.php';
+
 class SilverStripeContextTest extends \PHPUnit_Framework_TestCase {
 
 	/**
