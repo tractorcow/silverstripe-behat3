@@ -67,7 +67,7 @@ class LoginContext extends BehatContext
     /**
      * Creates a member in a group with the correct permissions.
      * Example: Given I am logged in with "ADMIN" permissions
-     * 
+     *
      * @Given /^I am logged in with "([^"]*)" permissions$/
      */
     function iAmLoggedInWithPermissions($permCode)
@@ -77,7 +77,7 @@ class LoginContext extends BehatContext
             if (!$group) {
                 $group = \Injector::inst()->create('Group');
             }
- 
+
             $group->Title = "$permCode group";
             $group->write();
 
@@ -122,28 +122,13 @@ class LoginContext extends BehatContext
      * @When /^I log in with "(?<username>[^"]*)" and "(?<password>[^"]*)"$/
      */
     public function stepILogInWith($email, $password)
-    {        
+    {
+        $c = $this->getMainContext();
+        $loginUrl = $c->joinUrlParts($c->getBaseUrl(), $c->getLoginUrl());
+        $this->getSession()->visit($loginUrl);
         $page = $this->getSession()->getPage();
         $forms = $page->findAll('xpath', '//form[contains(@action, "Security/LoginForm")]');
         assertNotNull($forms, 'Login form not found');
-
-        // Try to find visible forms on current page
-        // Allow multiple login forms (e.g. social login) by filering for "Email" field
-        $visibleForm = null;
-        foreach($forms as $form) {
-            if($form->isVisible() && $form->find('css', '[name=Email]')) {
-                $visibleForm = $form;
-            }
-        }
-    
-        // If no login form, go to /security/login page
-        if(!$visibleForm) {
-            $c = $this->getMainContext();
-            $loginUrl = $c->joinUrlParts($c->getBaseUrl(), $c->getLoginUrl());
-            $this->getSession()->visit($loginUrl);
-            $page = $this->getSession()->getPage();
-            $forms = $page->findAll('xpath', '//form[contains(@action, "Security/LoginForm")]');
-        }
 
         // Try to find visible forms again on login page.
         $visibleForm = null;
@@ -154,18 +139,21 @@ class LoginContext extends BehatContext
         }
 
         assertNotNull($visibleForm, 'Could not find login form');
-        
+
         $emailField = $visibleForm->find('css', '[name=Email]');
         $passwordField = $visibleForm->find('css', '[name=Password]');
         $submitButton = $visibleForm->find('css', '[type=submit]');
+        $securityID = $visibleForm->find('css', '[name=SecurityID]');
 
         assertNotNull($emailField, 'Email field on login form not found');
         assertNotNull($passwordField, 'Password field on login form not found');
         assertNotNull($submitButton, 'Submit button on login form not found');
+        // @todo Once CSRF is mandatory, uncomment this
+        // assertNotNull($securityID, 'CSRF token not found');
 
         $emailField->setValue($email);
         $passwordField->setValue($password);
-        $submitButton->press(); 
+        $submitButton->press();
     }
 
     /**
