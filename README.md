@@ -91,7 +91,7 @@ You can run the server locally in a separate Terminal session:
 
 In some cases it may be necessary to start a specific version of firefox
 
-	java -jar selenium-server-standalone-2.41.0.jar -Dwebdriver.firefox.bin="/Applications/Firefox26.app/Contents/MacOS/firefox-bin"
+	java -jar selenium-server-standalone-2.41.0.jar -Dwebdriver.firefox.bin="/Applications/Firefox31.app/Contents/MacOS/firefox-bin"
 
 ### Running the Tests
 
