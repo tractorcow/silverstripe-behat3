@@ -9,6 +9,8 @@ Behat\Behat\Context\Step,
 Behat\Behat\Exception\PendingException;
 use Behat\Gherkin\Node\PyStringNode,
 Behat\Gherkin\Node\TableNode;
+use SilverStripe\ORM\DataObject;
+
 
 // PHPUnit
 require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions.php';
@@ -86,7 +88,7 @@ class LoginContext extends BehatContext
             $permission->write();
             $group->Permissions()->add($permission);
 
-            $member = \DataObject::get_one('Member', sprintf('"Email" = \'%s\'', "$permCode@example.org"));
+            $member = DataObject::get_one('Member', sprintf('"Email" = \'%s\'', "$permCode@example.org"));
             if (!$member) {
                 $member = \Injector::inst()->create('Member');
             }
