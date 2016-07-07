@@ -2,14 +2,12 @@
 
 namespace SilverStripe\BehatExtension\Context;
 
-use Behat\Behat\Context\ClosuredContextInterface,
-Behat\Behat\Context\TranslatedContextInterface,
-Behat\Behat\Context\BehatContext,
-Behat\Behat\Context\Step,
-Behat\Behat\Exception\PendingException;
-use Behat\Gherkin\Node\PyStringNode,
-Behat\Gherkin\Node\TableNode;
+use Behat\Behat\Context\BehatContext;
+use Behat\Behat\Context\Step;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\Group;
+use SilverStripe\Security\Member;
+
 
 
 // PHPUnit
@@ -75,27 +73,27 @@ class LoginContext extends BehatContext
     function iAmLoggedInWithPermissions($permCode)
     {
         if (!isset($this->cache_generatedMembers[$permCode])) {
-            $group = \Group::get()->filter('Title', "$permCode group")->first();
+            $group = Group::get()->filter('Title', "$permCode group")->first();
             if (!$group) {
-                $group = \Injector::inst()->create('Group');
+                $group = \Injector::inst()->create('SilverStripe\\Security\\Group');
             }
 
             $group->Title = "$permCode group";
             $group->write();
 
-            $permission = \Injector::inst()->create('Permission');
+            $permission = \Injector::inst()->create('SilverStripe\\Security\\Permission');
             $permission->Code = $permCode;
             $permission->write();
             $group->Permissions()->add($permission);
 
-            $member = DataObject::get_one('Member', sprintf('"Email" = \'%s\'', "$permCode@example.org"));
+            $member = DataObject::get_one('SilverStripe\\Security\\Member', sprintf('"Email" = \'%s\'', "$permCode@example.org"));
             if (!$member) {
-                $member = \Injector::inst()->create('Member');
+                $member = \Injector::inst()->create('SilverStripe\\Security\\Member');
             }
 
             // make sure any validation for password is skipped, since we're not testing complexity here
-            $validator = \Member::password_validator();
-            \Member::set_password_validator(null);
+            $validator = Member::password_validator();
+            Member::set_password_validator(null);
             $member->FirstName = $permCode;
             $member->Surname = "User";
             $member->Email = "$permCode@example.org";
@@ -103,7 +101,7 @@ class LoginContext extends BehatContext
             $member->changePassword('Secret!123');
             $member->write();
             $group->Members()->add($member);
-            \Member::set_password_validator($validator);
+            Member::set_password_validator($validator);
 
             $this->cache_generatedMembers[$permCode] = $member;
         }
@@ -183,7 +181,7 @@ class LoginContext extends BehatContext
      */
     public function stepPasswordForEmailShouldBe($id, $password)
     {
-        $member = \Member::get()->filter('Email', $id)->First();
+        $member = Member::get()->filter('Email', $id)->First();
         assertNotNull($member);
         assertTrue($member->checkPassword($password)->valid());
     }

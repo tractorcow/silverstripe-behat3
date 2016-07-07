@@ -10,6 +10,8 @@ use Behat\Behat\Context\BehatContext,
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\Versioning\Versioned;
+use SilverStripe\Security\Permission;
+
 
 
 // PHPUnit
@@ -379,10 +381,10 @@ class FixtureContext extends BehatContext
 	 * @Given /^(?:(an|a|the) )"member" "(?<id>[^"]+)" belonging to "(?<groupId>[^"]+)"$/
 	 */
 	public function stepCreateMemberWithGroup($id, $groupId) {
-		$group = $this->fixtureFactory->get('Group', $groupId);
-		if(!$group) $group = $this->fixtureFactory->createObject('Group', $groupId);
+		$group = $this->fixtureFactory->get('SilverStripe\\Security\\Group', $groupId);
+		if(!$group) $group = $this->fixtureFactory->createObject('SilverStripe\\Security\\Group', $groupId);
 
-		$member = $this->fixtureFactory->createObject('Member', $id);
+		$member = $this->fixtureFactory->createObject('SilverStripe\\Security\\Member', $id);
 		$member->Groups()->add($group);
 	}
 
@@ -392,7 +394,7 @@ class FixtureContext extends BehatContext
 	 * @Given /^(?:(an|a|the) )"member" "(?<id>[^"]+)" belonging to "(?<groupId>[^"]+)" with (?<data>.*)$/
 	 */
 	public function stepCreateMemberWithGroupAndData($id, $groupId, $data) {
-		$class = 'Member';
+		$class = 'SilverStripe\\Security\\Member';
 		preg_match_all(
 			'/"(?<key>[^"]+)"\s*=\s*"(?<value>[^"]+)"/',
 			$data,
@@ -403,8 +405,8 @@ class FixtureContext extends BehatContext
 			array_combine($matches['key'], $matches['value'])
 		);
 
-		$group = $this->fixtureFactory->get('Group', $groupId);
-		if(!$group) $group = $this->fixtureFactory->createObject('Group', $groupId);
+		$group = $this->fixtureFactory->get('SilverStripe\\Security\\Group', $groupId);
+		if(!$group) $group = $this->fixtureFactory->createObject('SilverStripe\\Security\\Group', $groupId);
 
 		$member = $this->fixtureFactory->createObject($class, $id, $fields);
 		$member->Groups()->add($group);
@@ -419,10 +421,10 @@ class FixtureContext extends BehatContext
 		// Convert natural language permissions to codes
 		preg_match_all('/"([^"]+)"/', $permissionStr, $matches);
 		$permissions = $matches[1];
-		$codes = \Permission::get_codes(false);
+		$codes = Permission::get_codes(false);
 
-		$group = $this->fixtureFactory->get('Group', $id);
-		if(!$group) $group = $this->fixtureFactory->createObject('Group', $id);
+		$group = $this->fixtureFactory->get('SilverStripe\\Security\\Group', $id);
+		if(!$group) $group = $this->fixtureFactory->createObject('SilverStripe\\Security\\Group', $id);
 
 		foreach($permissions as $permission) {
 			$found = false;
@@ -431,7 +433,7 @@ class FixtureContext extends BehatContext
 					$permission == $code
 					|| $permission == $details['name']
 				) {
-					\Permission::grant($group->ID, $code);
+					Permission::grant($group->ID, $code);
 					$found = true;
 				}
 			}
