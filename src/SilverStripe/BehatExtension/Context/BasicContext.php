@@ -480,8 +480,14 @@ JS;
 
 		foreach($parent->findAll('css', 'label') as $option) {
 			if($option->getText() == $value) {
+				$input = null;
+
+				// First, look for inputs referenced by the "for" element on this label
 				$for = $option->getAttribute('for');
-				$input = $parent->findById($for);
+				if ($for) $input = $parent->findById($for);
+
+				// Otherwise look for inputs _inside_ the label
+				if (!$input) $input = $option->find('css', 'input');
 
 				if(!$input) throw new \InvalidArgumentException(sprintf('Input "%s" cannot be found', $value));
 
