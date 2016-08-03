@@ -105,13 +105,13 @@ JS;
 	public function readErrorHandlerAfterStep(StepEvent $event) {
 		try{
 	        $page = $this->getSession()->getPage();
-	
+
 	        $jserrors = $page->find('xpath', '//body[@data-jserrors]');
 	        if (null !== $jserrors) {
 	            $this->takeScreenshot($event);
 	            file_put_contents('php://stderr', $jserrors->getAttribute('data-jserrors') . PHP_EOL);
 	        }
-	
+
 	        $javascript = <<<JS
 if ('undefined' !== typeof window.jQuery) {
 	window.jQuery(document).ready(function() {
@@ -256,7 +256,7 @@ JS;
 			$this->logException($e);
 		}
 	}
-	
+
     /**
      * Delete any created files and folders from assets directory
      *
@@ -395,7 +395,7 @@ JS;
         $clickTypeFn = $clickTypeMap[$clickType];
         $element->$clickTypeFn();
     }
-    
+
     /**
     * Needs to be in single command to avoid "unexpected alert open" errors in Selenium.
     * Example: I click "Delete" in the ".actions" element, confirming the dialog
@@ -793,7 +793,7 @@ JS;
 			$selector)]/ancestor-or-self::table[1]");
 
         // Find tables by a .title node
-		$candidates += $page->findAll('xpath', "//table//*[@class='title' and contains(normalize-space(string(.)), 
+		$candidates += $page->findAll('xpath', "//table//*[contains(concat(' ',normalize-space(@class),' '), ' title ') and contains(normalize-space(string(.)), 
 			$selector)]/ancestor-or-self::table[1]");
 
         // Some tables don't have a visible title, so look for a fieldset with data-name instead
@@ -992,14 +992,14 @@ JS;
             $backtrace[1]['function']
         ));
     }
-	
-	
-	
+
+
+
 	/**
 	 * We have to catch exceptions and log somehow else otherwise behat falls over
 	 */
 	protected function logException($e){
 		file_put_contents('php://stderr', 'Exception caught: '.$e);
 	}
-	
+
 }
