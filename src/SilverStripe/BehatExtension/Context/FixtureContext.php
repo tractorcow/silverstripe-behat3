@@ -323,7 +323,8 @@ class FixtureContext extends BehatContext
 	 */
 	public function stepUpdateRecordState($type, $id, $state) {
 		$class = $this->convertTypeToClass($type);
-		$obj = $this->fixtureFactory->get($class, $id);
+        /** @var DataObject|Versioned $obj */
+        $obj = $this->fixtureFactory->get($class, $id);
 		if(!$obj) {
 			throw new \InvalidArgumentException(sprintf(
 				'Can not find record "%s" with identifier "%s"',
@@ -334,7 +335,7 @@ class FixtureContext extends BehatContext
 
 		switch($state) {
 			case 'published':
-				$obj->publish('Stage', 'Live');
+				$obj->copyVersionToStage('Stage', 'Live');
 				break;
 			case 'not published':
 			case 'unpublished':
@@ -521,24 +522,18 @@ class FixtureContext extends BehatContext
 		$fields = $this->prepareFixture($class, $id);
 		$record = $this->fixtureFactory->createObject($class, $id, $fields);
 		$date = date("Y-m-d H:i:s",strtotime($time));
-		$table = \ClassInfo::baseDataClass(get_class($record));
+		$table = $record->baseTable();
 		$field = ($mod == 'created') ? 'Created' : 'LastEdited';
-		DB::query(sprintf(
-			'UPDATE "%s" SET "%s" = \'%s\' WHERE "ID" = \'%d\'',
-			$table,
-			$field,
-			$date,
-			$record->ID
-		));
+		DB::prepared_query(
+            "UPDATE \"{$table}\" SET \"{$field}\" = ? WHERE \"ID\" = ?",
+            [$date, $record->ID]
+        );
 		// Support for Versioned extension, by checking for a "Live" stage
-		if(DB::getConn()->hasTable($table . '_Live')) {
-			DB::query(sprintf(
-				'UPDATE "%s_Live" SET "%s" = \'%s\' WHERE "ID" = \'%d\'',
-				$table,
-				$field,
-				$date,
-				$record->ID
-			));
+		if(DB::get_schema()->hasTable($table . '_Live')) {
+			DB::prepared_query(
+			    "UPDATE \"{$table}_Live\" SET \"{$field}\" = ? WHERE \"ID\" = ?",
+				[$date, $record->ID]
+			);
 		}
 	}
 
