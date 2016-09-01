@@ -2,12 +2,12 @@
 
 namespace SilverStripe\BehatExtension\Console\Processor;
 
+use SilverStripe\Core\Manifest\SS_ClassLoader;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-
 use Behat\Behat\Console\Processor\LocatorProcessor as BaseProcessor;
 
 /**
@@ -56,12 +56,12 @@ class LocatorProcessor extends BaseProcessor
     public function process(InputInterface $input, OutputInterface $output)
     {
         $featuresPath = $input->getArgument('features');
-        
+
         // Can't use 'behat.paths.base' since that's locked at this point to base folder (not module)
         $pathSuffix   = $this->container->getParameter('behat.silverstripe_extension.context.path_suffix');
 
         $currentModuleName = null;
-        $modules = \SS_ClassLoader::instance()->getManifest()->getModules();
+        $modules = SS_ClassLoader::instance()->getManifest()->getModules();
 
         // get module specified in behat.yml
         $currentModuleName = $this->container->getParameter('behat.silverstripe_extension.module');

@@ -6,7 +6,13 @@ use Behat\Behat\Context\BehatContext;
 use Behat\Behat\Event\ScenarioEvent;
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
-use SilverStripe\Filesystem\Storage\AssetStore;
+use SilverStripe\Assets\Folder;
+use SilverStripe\Assets\Storage\AssetStore;
+use SilverStripe\Core\ClassInfo;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Dev\FixtureFactory;
+use SilverStripe\Dev\SapphireTest;
+use SilverStripe\Dev\YamlFixture;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\Versioning\Versioned;
@@ -23,7 +29,7 @@ class FixtureContext extends BehatContext
     protected $context;
 
     /**
-     * @var \FixtureFactory
+     * @var FixtureFactory
      */
     protected $fixtureFactory;
 
@@ -55,20 +61,23 @@ class FixtureContext extends BehatContext
     }
 
     /**
-     * @return \FixtureFactory
+     * @return FixtureFactory
      */
     public function getFixtureFactory()
     {
         if (!$this->fixtureFactory) {
-            $this->fixtureFactory = \Injector::inst()->create('FixtureFactory', 'FixtureContextFactory');
+            $this->fixtureFactory = Injector::inst()->create(
+                'SilverStripe\\Dev\\FixtureFactory',
+                'FixtureContextFactory'
+            );
         }
         return $this->fixtureFactory;
     }
 
     /**
-     * @param \FixtureFactory $factory
+     * @param FixtureFactory $factory
      */
-    public function setFixtureFactory(\FixtureFactory $factory)
+    public function setFixtureFactory(FixtureFactory $factory)
     {
         $this->fixtureFactory = $factory;
     }
@@ -94,9 +103,9 @@ class FixtureContext extends BehatContext
      */
     public function beforeDatabaseDefaults(ScenarioEvent $event)
     {
-        \SapphireTest::empty_temp_db();
+        SapphireTest::empty_temp_db();
         DB::get_conn()->quiet();
-        $dataClasses = \ClassInfo::subclassesFor('SilverStripe\\ORM\\DataObject');
+        $dataClasses = ClassInfo::subclassesFor('SilverStripe\\ORM\\DataObject');
         array_shift($dataClasses);
         foreach ($dataClasses as $dataClass) {
             \singleton($dataClass)->requireDefaultRecords();
@@ -108,7 +117,7 @@ class FixtureContext extends BehatContext
      */
     public function afterResetDatabase(ScenarioEvent $event)
     {
-        \SapphireTest::empty_temp_db();
+        SapphireTest::empty_temp_db();
     }
 
     /**
@@ -406,7 +415,7 @@ class FixtureContext extends BehatContext
 
         // Save fixtures into database
         // TODO Run prepareAsset() for each File and Folder record
-        $yamlFixture = new \YamlFixture($yaml);
+        $yamlFixture = new YamlFixture($yaml);
         $yamlFixture->writeInto($this->getFixtureFactory());
     }
 
@@ -595,7 +604,7 @@ class FixtureContext extends BehatContext
      */
     protected function prepareFixture($class, $identifier, $data = array())
     {
-        if ($class == 'File' || is_subclass_of($class, 'File')) {
+        if ($class == 'SilverStripe\\Assets\\File' || is_subclass_of($class, 'SilverStripe\\Assets\\File')) {
             $data =  $this->prepareAsset($class, $identifier, $data);
         }
         return $data;
@@ -611,11 +620,11 @@ class FixtureContext extends BehatContext
         $sourcePath = $this->joinPaths($this->getFilesPath(), basename($relativeTargetPath));
 
         // Create file or folder on filesystem
-        if ($class == 'Folder' || is_subclass_of($class, 'Folder')) {
-            $parent = \Folder::find_or_make($relativeTargetPath);
+        if ($class == 'SilverStripe\\Assets\\Folder' || is_subclass_of($class, 'SilverStripe\\Assets\\Folder')) {
+            $parent = Folder::find_or_make($relativeTargetPath);
             $data['ID'] = $parent->ID;
         } else {
-            $parent = \Folder::find_or_make(dirname($relativeTargetPath));
+            $parent = Folder::find_or_make(dirname($relativeTargetPath));
             if (!file_exists($sourcePath)) {
                 throw new \InvalidArgumentException(sprintf(
                     'Source file for "%s" cannot be found in "%s"',
@@ -676,11 +685,11 @@ class FixtureContext extends BehatContext
         // Try direct mapping
         $class = str_replace(' ', '', ucwords($type));
         if (class_exists($class) && is_subclass_of($class, 'SilverStripe\\ORM\\DataObject')) {
-            return \ClassInfo::class_name($class);
+            return ClassInfo::class_name($class);
         }
 
         // Fall back to singular names
-        foreach (array_values(\ClassInfo::subclassesFor('SilverStripe\\ORM\\DataObject')) as $candidate) {
+        foreach (array_values(ClassInfo::subclassesFor('SilverStripe\\ORM\\DataObject')) as $candidate) {
             if (strcasecmp(singleton($candidate)->singular_name(), $type) === 0) {
                 return $candidate;
             }

@@ -2,6 +2,7 @@
 
 namespace SilverStripe\BehatExtension\Compiler;
 
+use SilverStripe\Dev\SapphireTest;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 
@@ -21,13 +22,8 @@ class CoreInitializationPass implements CompilerPassInterface
         $frameworkPath = $container->getParameter('behat.silverstripe_extension.framework_path');
         $_GET['flush'] = 1;
         require_once $frameworkPath . '/core/Core.php';
-        
-        if (class_exists('TestRunner')) {
-            // 3.x compat
-            \TestRunner::use_test_manifest();
-        } else {
-            \SapphireTest::use_test_manifest();
-        }
+
+        SapphireTest::use_test_manifest();
 
         unset($_GET['flush']);
 

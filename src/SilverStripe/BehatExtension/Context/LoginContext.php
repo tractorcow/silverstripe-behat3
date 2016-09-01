@@ -4,6 +4,7 @@ namespace SilverStripe\BehatExtension\Context;
 
 use Behat\Behat\Context\BehatContext;
 use Behat\Behat\Context\Step;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Group;
 use SilverStripe\Security\Member;
@@ -73,20 +74,20 @@ class LoginContext extends BehatContext
         if (!isset($this->cache_generatedMembers[$permCode])) {
             $group = Group::get()->filter('Title', "$permCode group")->first();
             if (!$group) {
-                $group = \Injector::inst()->create('SilverStripe\\Security\\Group');
+                $group = Injector::inst()->create('SilverStripe\\Security\\Group');
             }
 
             $group->Title = "$permCode group";
             $group->write();
 
-            $permission = \Injector::inst()->create('SilverStripe\\Security\\Permission');
+            $permission = Injector::inst()->create('SilverStripe\\Security\\Permission');
             $permission->Code = $permCode;
             $permission->write();
             $group->Permissions()->add($permission);
 
             $member = DataObject::get_one('SilverStripe\\Security\\Member', sprintf('"Email" = \'%s\'', "$permCode@example.org"));
             if (!$member) {
-                $member = \Injector::inst()->create('SilverStripe\\Security\\Member');
+                $member = Injector::inst()->create('SilverStripe\\Security\\Member');
             }
 
             // make sure any validation for password is skipped, since we're not testing complexity here
@@ -179,7 +180,7 @@ class LoginContext extends BehatContext
      */
     public function stepPasswordForEmailShouldBe($id, $password)
     {
-        $member = Member::get()->filter('Email', $id)->First();
+        $member = Member::get()->filter('SilverStripe\\Control\\Email\\Email', $id)->First();
         assertNotNull($member);
         assertTrue($member->checkPassword($password)->valid());
     }

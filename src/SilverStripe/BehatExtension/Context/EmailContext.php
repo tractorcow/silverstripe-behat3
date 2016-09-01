@@ -2,15 +2,15 @@
 
 namespace SilverStripe\BehatExtension\Context;
 
-use Behat\Behat\Context\ClosuredContextInterface;
-use Behat\Behat\Context\TranslatedContextInterface;
 use Behat\Behat\Context\BehatContext;
 use Behat\Behat\Context\Step;
-use Behat\Behat\Event\FeatureEvent;
 use Behat\Behat\Event\ScenarioEvent;
-use Behat\Behat\Exception\PendingException;
-use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
+use Behat\Mink\Session;
+use SilverStripe\BehatExtension\Utility\TestMailer;
+use SilverStripe\Control\Email\Email;
+use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Injector\Injector;
 use Symfony\Component\DomCrawler\Crawler;
 
 // PHPUnit
@@ -23,6 +23,9 @@ class EmailContext extends BehatContext
 {
     protected $context;
 
+    /**
+     * @var TestMailer
+     */
     protected $mailer;
 
     /**
@@ -44,6 +47,9 @@ class EmailContext extends BehatContext
 
     /**
      * Get Mink session from MinkContext
+     *
+     * @param string $name
+     * @return Session
      */
     public function getSession($name = null)
     {
@@ -57,9 +63,9 @@ class EmailContext extends BehatContext
     {
         // Also set through the 'supportbehat' extension
         // to ensure its available both in CLI execution and the tested browser session
-        $this->mailer = new \SilverStripe\BehatExtension\Utility\TestMailer();
-        \Email::set_mailer($this->mailer);
-        \Config::inst()->update("Email", "send_all_emails_to", null);
+        $this->mailer = new TestMailer();
+        Injector::inst()->registerService($this->mailer, 'SilverStripe\\Control\\Email\\Mailer');
+        Email::config()->update("send_all_emails_to", null);
     }
 
     /**
@@ -172,7 +178,7 @@ class EmailContext extends BehatContext
         assertNotNull($linkEl);
         $link = $linkEl->attr('href');
         assertNotNull($link);
-        
+
         return new Step\When(sprintf('I go to "%s"', $link));
     }
 
@@ -193,7 +199,7 @@ class EmailContext extends BehatContext
         assertNotNull($link);
         return new Step\When(sprintf('I go to "%s"', $link));
     }
-    
+
     /**
      * Assumes an email has been identified by a previous step,
      * e.g. through 'Given there should be an email to "test@test.com"'.
@@ -249,7 +255,7 @@ class EmailContext extends BehatContext
         $emailContent = strip_tags($emailContent);
         $emailContent = preg_replace("/\h+/", " ", $emailContent);
         $rows = $table->getRows();
-        
+
         // For "should not contain"
         if (trim($negate)) {
             foreach ($rows as $row) {

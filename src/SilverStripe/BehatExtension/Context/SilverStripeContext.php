@@ -3,19 +3,13 @@
 namespace SilverStripe\BehatExtension\Context;
 
 use Behat\Behat\Context\Step;
-use Behat\Behat\Event\FeatureEvent;
 use Behat\Behat\Event\ScenarioEvent;
-use Behat\Behat\Event\SuiteEvent;
-use Behat\Gherkin\Node\PyStringNode;
 use Behat\MinkExtension\Context\MinkContext;
 use Behat\Mink\Driver\GoutteDriver;
 use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Exception\UnsupportedDriverActionException;
 use Behat\Mink\Exception\ElementNotFoundException;
-
-use SilverStripe\BehatExtension\Context\SilverStripeAwareContextInterface;
-
-use Symfony\Component\Yaml\Yaml;
+use InvalidArgumentException;
 
 // Mink etc.
 require_once 'vendor/autoload.php';
@@ -32,7 +26,7 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
     protected $databaseName;
 
     /**
-     * @var Array Partial string match for step names
+     * @var array Partial string match for step names
      * that are considered to trigger Ajax request in the CMS,
      * and hence need special timeout handling.
      * @see \SilverStripe\BehatExtension\Context\BasicContext->handleAjaxBeforeStep().
@@ -151,8 +145,8 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
      * Also supports direct CSS selectors and regions identified by a "data-title" attribute.
      * When using the "data-title" attribute, ensure not to include double quotes.
      *
-     * @param String $region Region name or CSS selector
-     * @return MinkElement|null
+     * @param string $region Region name or CSS selector
+     * @return MinkElement
      */
     public function getRegionObj($region)
     {

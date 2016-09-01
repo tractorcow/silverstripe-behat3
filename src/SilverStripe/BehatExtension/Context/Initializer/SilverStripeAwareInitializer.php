@@ -4,8 +4,8 @@ namespace SilverStripe\BehatExtension\Context\Initializer;
 
 use Behat\Behat\Context\Initializer\InitializerInterface;
 use Behat\Behat\Context\ContextInterface;
-
 use SilverStripe\BehatExtension\Context\SilverStripeAwareContextInterface;
+use SilverStripe\Core\Injector\Injector;
 
 /*
  * This file is part of the Behat/SilverStripeExtension
@@ -24,11 +24,11 @@ use SilverStripe\BehatExtension\Context\SilverStripeAwareContextInterface;
  */
 class SilverStripeAwareInitializer implements InitializerInterface
 {
-    
+
     private $databaseName;
-    
+
     /**
-     * @var Array
+     * @var array
      */
     protected $ajaxSteps;
 
@@ -59,6 +59,8 @@ class SilverStripeAwareInitializer implements InitializerInterface
 
     /**
      * Initializes initializer.
+     *
+     * @param string $frameworkPath
      */
     public function __construct($frameworkPath)
     {
@@ -66,7 +68,7 @@ class SilverStripeAwareInitializer implements InitializerInterface
 
         file_put_contents('php://stdout', "Creating test session environment" . PHP_EOL);
 
-        $testEnv = \Injector::inst()->get('TestSessionEnvironment');
+        $testEnv = Injector::inst()->get('TestSessionEnvironment');
         $testEnv->startTestSession(array(
             'createDatabase' => true
         ));
@@ -183,7 +185,7 @@ class SilverStripeAwareInitializer implements InitializerInterface
     }
 
     /**
-     * @param String Absolute path to 'framework' module
+     * @param string $frameworkPath Absolute path to 'framework' module
      */
     protected function bootstrap($frameworkPath)
     {

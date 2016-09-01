@@ -18,6 +18,7 @@ class ModuleContextClassGuesser implements ClassGuesserInterface
      * Initializes guesser.
      *
      * @param string $namespaceSuffix
+     * @param string $contextClass
      */
     public function __construct($namespaceSuffix, $contextClass)
     {
@@ -28,7 +29,8 @@ class ModuleContextClassGuesser implements ClassGuesserInterface
     /**
      * Sets bundle namespace to use for guessing.
      *
-     * @param string $namespace
+     * @param string $namespaceBase
+     * @return $this
      */
     public function setNamespaceBase($namespaceBase)
     {
