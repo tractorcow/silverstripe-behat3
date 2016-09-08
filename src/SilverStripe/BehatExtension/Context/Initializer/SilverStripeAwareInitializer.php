@@ -193,7 +193,7 @@ class SilverStripeAwareInitializer implements InitializerInterface
 
         // Connect to database and build manifest
         $_GET['flush'] = 1;
-        require_once $frameworkPath . '/core/Core.php';
+        require_once $frameworkPath . '/Core/Core.php';
         unset($_GET['flush']);
 
         // Remove the error handler so that PHPUnit can add its own

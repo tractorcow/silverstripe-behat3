@@ -21,7 +21,7 @@ class CoreInitializationPass implements CompilerPassInterface
         // Connect to database and build manifest
         $frameworkPath = $container->getParameter('behat.silverstripe_extension.framework_path');
         $_GET['flush'] = 1;
-        require_once $frameworkPath . '/core/Core.php';
+        require_once $frameworkPath . '/Core/Core.php';
 
         SapphireTest::use_test_manifest();
 
