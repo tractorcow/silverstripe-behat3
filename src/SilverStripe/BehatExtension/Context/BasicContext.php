@@ -6,11 +6,10 @@ use Behat\Behat\Context\BehatContext;
 use Behat\Behat\Context\Step;
 use Behat\Behat\Event\StepEvent;
 use Behat\Behat\Event\ScenarioEvent;
-
 use Behat\Mink\Driver\Selenium2Driver;
+use SilverStripe\Assets\File;
+use SilverStripe\Assets\Filesystem;
 
-use Behat\Gherkin\Node\PyStringNode;
-use Behat\Gherkin\Node\TableNode;
 
 // PHPUnit
 require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions.php';
@@ -60,6 +59,7 @@ class BasicContext extends BehatContext
     /**
      * Get Mink session from MinkContext
      *
+     * @param string $name
      * @return \Behat\Mink\Session
      */
     public function getSession($name = null)
@@ -274,10 +274,10 @@ JS;
      */
     public function cleanAssetsAfterScenario(ScenarioEvent $event)
     {
-        foreach (\File::get() as $file) {
+        foreach (File::get() as $file) {
             $file->delete();
         }
-        \Filesystem::removeFolder(ASSETS_PATH, true);
+        Filesystem::removeFolder(ASSETS_PATH, true);
     }
 
     public function takeScreenshot(StepEvent $event)
@@ -298,7 +298,7 @@ JS;
             return;
         } // quit silently when path is not set
 
-        \Filesystem::makeFolder($path);
+        Filesystem::makeFolder($path);
         $path = realpath($path);
 
         if (!file_exists($path)) {

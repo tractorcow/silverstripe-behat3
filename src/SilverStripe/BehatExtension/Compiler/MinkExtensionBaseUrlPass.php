@@ -58,8 +58,8 @@ class MinkExtensionBaseUrlPass implements CompilerPassInterface
      * Try to auto-detect host for webroot based on _ss_environment.php data (unless explicitly set in behat.yml)
      * Copied logic from Core.php, because it needs to be executed prior to {@link SilverStripeAwareInitializer}.
      *
-     * @param String Absolute start path to search upwards from
-     * @return Boolean Absolute path to environment file
+     * @param string $path Absolute start path to search upwards from
+     * @return string Absolute path to environment file
      */
     protected function findEnvironmentConfigFile($path)
     {
@@ -85,8 +85,8 @@ class MinkExtensionBaseUrlPass implements CompilerPassInterface
     /**
      * Copied logic from Core.php, because it needs to be executed prior to {@link SilverStripeAwareInitializer}.
      *
-     * @param String Absolute start path to search upwards from
-     * @param Array Map of paths to host names
+     * @param string $path Absolute start path to search upwards from
+     * @param array $mapping Map of paths to host names
      * @return String URL
      */
     protected function findBaseUrlFromMapping($path, $mapping)

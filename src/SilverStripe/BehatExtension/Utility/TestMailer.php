@@ -2,12 +2,16 @@
 
 namespace SilverStripe\BehatExtension\Utility;
 
+use SilverStripe\Control\Email\Mailer;
+use SilverStripe\Core\Injector\Injector;
+use TestSessionEnvironment;
+
 /**
  * Same principle as core TestMailer class,
  * but saves emails in {@link TestSessionEnvironment}
  * to share the state between PHP calls (CLI vs. browser).
  */
-class TestMailer extends \Mailer
+class TestMailer extends Mailer
 {
 
     /**
@@ -17,7 +21,7 @@ class TestMailer extends \Mailer
 
     public function __construct()
     {
-        $this->testSessionEnvironment = \Injector::inst()->get('TestSessionEnvironment');
+        $this->testSessionEnvironment = Injector::inst()->get('TestSessionEnvironment');
     }
 
     /**
@@ -39,7 +43,7 @@ class TestMailer extends \Mailer
 
         return true;
     }
-    
+
     /**
      * Send a multi-part HTML email
      * TestMailer will merely record that the email was asked to be sent, without sending anything.
@@ -54,7 +58,7 @@ class TestMailer extends \Mailer
         $plainContent = false,
         $inlineImages = false
     ) {
-    
+
         $this->saveEmail(array(
             'Type' => 'html',
             'To' => $to,
@@ -68,7 +72,7 @@ class TestMailer extends \Mailer
 
         return true;
     }
-    
+
     /**
      * Clear the log of emails sent
      */

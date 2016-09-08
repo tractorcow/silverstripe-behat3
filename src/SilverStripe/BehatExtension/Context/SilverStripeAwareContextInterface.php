@@ -21,14 +21,14 @@ interface SilverStripeAwareContextInterface
     /**
      * Sets SilverStripe instance.
      *
-     * @param String $database_name Temp database name
+     * @param string $databaseName Temp database name
      */
     public function setDatabase($databaseName);
 
     /**
      * Marks steps as AJAX steps for special treatment
      *
-     * @param array $ajax_steps Array of step name parts to match
+     * @param array $ajaxSteps Array of step name parts to match
      */
     public function setAjaxSteps($ajaxSteps);
 }
