@@ -58,13 +58,18 @@ class SilverStripeAwareInitializer implements InitializerInterface
     protected $testSessionEnvironment;
 
     /**
+     * @var string PHP file to included before loading Core.php
+     */
+    protected $bootstrapFile;
+
+    /**
      * Initializes initializer.
      *
      * @param string $frameworkPath
      */
-    public function __construct($frameworkPath)
+    public function __construct($frameworkPath, $bootstrapFile = null)
     {
-        $this->bootstrap($frameworkPath);
+        $this->bootstrap($frameworkPath, $bootstrapFile);
 
         file_put_contents('php://stdout', "Creating test session environment" . PHP_EOL);
 
@@ -187,9 +192,14 @@ class SilverStripeAwareInitializer implements InitializerInterface
     /**
      * @param string $frameworkPath Absolute path to 'framework' module
      */
-    protected function bootstrap($frameworkPath)
+    protected function bootstrap($frameworkPath, $bootstrapFile = null)
     {
         file_put_contents('php://stdout', 'Bootstrapping' . PHP_EOL);
+
+        // Require a bootstrap file, if provided
+        if ($bootstrapFile) {
+            require_once($bootstrapFile);
+        }
 
         // Connect to database and build manifest
         $_GET['flush'] = 1;

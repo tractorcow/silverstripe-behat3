@@ -62,6 +62,7 @@ class Extension implements ExtensionInterface
         if (isset($config['region_map'])) {
             $container->setParameter('behat.silverstripe_extension.region_map', $config['region_map']);
         }
+        $container->setParameter('behat.silverstripe_extension.bootstrap_file', $config['bootstrap_file']);
     }
 
     /**
@@ -101,6 +102,9 @@ class Extension implements ExtensionInterface
                 end()->
                 scalarNode('ajax_timeout')->
                     defaultValue(5000)->
+                end()->
+                scalarNode('bootstrap_file')->
+                    defaultNull()->
                 end()->
                 arrayNode('ajax_steps')->
                     defaultValue(array(
