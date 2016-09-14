@@ -10,7 +10,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Behat\Behat\Console\Processor\InitProcessor as BaseProcessor;
 use SilverStripe\Core\Manifest\ClassLoader;
 
-
 /**
  * Initializes a project for Behat usage, creating context files.
  */

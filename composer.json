@@ -31,8 +31,8 @@
 		"symfony/translation": "~2.0",
 		"symfony/yaml": "~2.0",
 		"symfony/finder": "~2.0",
-		"silverstripe/testsession": "*",
-		"silverstripe/framework": "^4.0.0"
+		"silverstripe/testsession": "^2.0.0-alpha2",
+		"silverstripe/framework": "^4.0.0-alpha2"
 	},
 
 	"autoload": {
