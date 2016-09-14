@@ -10,7 +10,6 @@ use Behat\Mink\Driver\Selenium2Driver;
 use SilverStripe\Assets\File;
 use SilverStripe\Assets\Filesystem;
 
-
 // PHPUnit
 require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions.php';
 
