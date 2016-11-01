@@ -66,7 +66,7 @@ class InitProcessor extends BaseProcessor
         // Bootstrap SS so we can use module listing
         $frameworkPath = $this->container->getParameter('behat.silverstripe_extension.framework_path');
         $_GET['flush'] = 1;
-        require_once $frameworkPath . '/Core/Core.php';
+        require_once('Core/Core.php');
         unset($_GET['flush']);
 
         $featuresPath = $input->getArgument('features');

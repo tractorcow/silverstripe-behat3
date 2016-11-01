@@ -4,4 +4,4 @@ $frameworkDir = basename($frameworkPath);
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname($frameworkPath));
 }
-require_once $frameworkPath . '/Core/Core.php';
+require_once 'Core/Core.php';
