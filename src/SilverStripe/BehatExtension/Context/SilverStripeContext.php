@@ -13,6 +13,7 @@ use Behat\Mink\Driver\GoutteDriver,
 	Behat\Mink\Exception\UnsupportedDriverActionException,
 	Behat\Mink\Exception\ElementNotFoundException;
 
+use InvalidArgumentException;
 use SilverStripe\BehatExtension\Context\SilverStripeAwareContextInterface;
 
 use Symfony\Component\Yaml\Yaml;
@@ -414,9 +415,9 @@ class SilverStripeContext extends MinkContext implements SilverStripeAwareContex
 	 * @Given /^the current time is "([^"]*)"$/
 	 */
 	public function givenTheCurrentTimeIs($time) {
-		$newDatetime = \DateTime::createFromFormat('H:i:s', $date);
+		$newDatetime = \DateTime::createFromFormat('H:i:s', $time);
 		if(!$newDatetime) {
-			throw new InvalidArgumentException(sprintf('Invalid date format: %s (requires "H:i:s")', $date));
+			throw new InvalidArgumentException(sprintf('Invalid date format: %s (requires "H:i:s")', $time));
 		}
 
 		$state = $this->testSessionEnvironment->getState();
