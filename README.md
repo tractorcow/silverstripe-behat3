@@ -297,7 +297,7 @@ Example: mymodule/tests/behat/features/bootstrap/MyModule/Test/Behaviour/Feature
 
 ### Screen Size
 
-In some Selenium drivers like [SauceLabs](http://www.saucelabs.com) you can 
+In some Selenium drivers you can 
 define the desired browser window size through a `capabilities` definition.
 By default, Selenium doesn't support this though, so we've added a workaround
 through an environment variable:
@@ -412,23 +412,6 @@ does not default to the latest [Firefox ESR](https://www.mozilla.org/en-US/firef
 and [download the correct Firefox release](https://ftp.mozilla.org/pub/firefox/releases/)).
 Alternatively, [configure Travis](https://docs.travis-ci.com/user/firefox/) to use a newer version.
 Don't forget to disable auto-updates in your Firefox settings.
-
-### How do I use SauceLabs.com for remote Selenium2 testing?
-
-Here's a sample profile for your `behat.yml`:
-
-	# Saucelabs.com sample setup, use with "vendor/bin/behat --profile saucelabs"
-	saucelabs:
-	  extensions:
-	    SilverStripe\BehatExtension\MinkExtension:
-	      selenium2:
-	        browser: firefox
-	        # Add your own username and API token here
-	        wd_host: <user>:<api-token>@ondemand.saucelabs.com/wd/hub
-	        capabilities:
-	          platform: "Windows 2008"
-	          browser: "firefox"
-	          version: "15"
 
 ## Cheatsheet
 
