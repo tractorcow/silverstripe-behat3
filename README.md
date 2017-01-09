@@ -115,6 +115,7 @@ For example, if you want to start a Chrome Browser you can following the instruc
 
  * [Tutorial: Testing Form Submissions](docs/tutorial.md)
  * [Tutorial: Webservice Mocking with Phockito and TestSession](docs/webservice-mocking.md)
+ * [Tutorial: Setting up Behat on CircleCI](docs/circleci-tutorial.md)
 
 ## Configuration
 
