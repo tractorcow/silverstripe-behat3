@@ -330,6 +330,15 @@ This is most likely a problem with Composer's autoloading generator.
 Check that you have "SilverStripe" mentioned in the `vendor/composer/autoload_classmap.php` file,
 and call `composer dump-autoload` if not.
 
+### How do I wait for asynchronous actions in my steps?
+
+Sometimes you want to wait for an AJAX request or CSS animation to complete before
+calling the next step/assertion. Mink provides a [wait() method](http://mink.behat.org/en/latest/guides/session.html)
+for this purpose - just let the execution wait until a JavaScript expression satisfies your criteria.
+It's pretty common to make this expression a CSS selector.
+The Behat tests come with built-in support to wait for any pending `jQuery.ajax()` requests,
+check `BasicContext->handleAjaxBeforeStep()` and the `ajax_steps` configuration option.
+
 ### Why does the module need to know about the framework path on the filesystem?
 
 Sometimes SilverStripe needs to know the URL of your site. When you're visiting
