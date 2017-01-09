@@ -40,21 +40,16 @@ Note: The extension has only been tested with the `selenium2` Mink driver.
 Simply [install SilverStripe through Composer](http://doc.silverstripe.org/framework/en/installation/composer).
 Skip this step if adding the module to an existing project.
 
-	composer create-project silverstripe/installer my-test-project 3.1.x-dev
+	composer create-project silverstripe/installer my-test-project 3.x-dev
 
 Switch to the newly created webroot, and add the SilverStripe Behat extension.
 
 	cd my-test-project
-	composer require "silverstripe/behat-extension:*"
+	composer require --dev silverstripe/behat-extension:"@stable"
 
-Now get the latest Selenium2 server (requires Java):
+Now get the latest Selenium2 server (requires [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)):
 
-	wget http://selenium-release.storage.googleapis.com/2.44/selenium-server-standalone-2.44.0.jar
-
-On OSX, you can also use [Homebrew](http://brew.sh/): `brew install selenium-server-standalone`.
-If you are having issues running Selenium with your browser please check 
-that you're on the [latest driver](https://code.google.com/p/selenium/downloads/list),
-since the download link above might be out of date.
+	composer require --dev se/selenium-server-standalone:"2.x@stable"
 
 Download the latest [Firefox ESR](https://www.mozilla.org/en-US/firefox/organizations/all/) (Extended Support Release).
 It might be older than your currently installed Firefox.
@@ -87,11 +82,11 @@ Firefox will already have started the update, so close and delete it. The settin
 
 You can run the server locally in a separate Terminal session:
 
-    java -jar selenium-server-standalone-2.41.0.jar
+    vendor/bin/selenium-server-standalone
 
-In some cases it may be necessary to start a specific version of firefox
+In some cases it may be necessary to start a specific version of Firefox
 
-	java -jar selenium-server-standalone-2.41.0.jar -Dwebdriver.firefox.bin="/Applications/Firefox31.app/Contents/MacOS/firefox-bin"
+	vendor/bin/selenium-server-standalone -Dwebdriver.firefox.bin="/Applications/Firefox31.app/Contents/MacOS/firefox-bin"
 
 ### Running the Tests
 
@@ -303,7 +298,7 @@ Example: mymodule/tests/behat/features/bootstrap/MyModule/Test/Behaviour/Feature
 
 ### Screen Size
 
-In some Selenium drivers like [SauceLabs](http://www.saucelabs.com) you can 
+In some Selenium drivers you can 
 define the desired browser window size through a `capabilities` definition.
 By default, Selenium doesn't support this though, so we've added a workaround
 through an environment variable:
@@ -408,22 +403,16 @@ parameters to `dev/testsession/start`, and debug in the browser instead.
 
 The `macgdbp` IDE key needs to match your `xdebug.idekey` php.ini setting.
 
-### How do I use SauceLabs.com for remote Selenium2 testing?
+### How do I set up continuous integration through Travis?
 
-Here's a sample profile for your `behat.yml`:
-
-	# Saucelabs.com sample setup, use with "vendor/bin/behat --profile saucelabs"
-	saucelabs:
-	  extensions:
-	    SilverStripe\BehatExtension\MinkExtension:
-	      selenium2:
-	        browser: firefox
-	        # Add your own username and API token here
-	        wd_host: <user>:<api-token>@ondemand.saucelabs.com/wd/hub
-	        capabilities:
-	          platform: "Windows 2008"
-	          browser: "firefox"
-	          version: "15"
+Check out the [travis.yml](https://github.com/silverstripe/silverstripe-framework/blob/master/.travis.yml)
+in `silverstripe/framework` for a good example on how to set up Behat tests through [travis-ci.org](http://travis-ci.org).
+Note that the [Travis CI Environment](https://docs.travis-ci.com/user/ci-environment#Firefox)
+does not default to the latest [Firefox ESR](https://www.mozilla.org/en-US/firefox/organizations/all/) release, but an older version.
+(31.0 in January 2017). You should try to run your tests locally with the same Firefox version,
+and [download the correct Firefox release](https://ftp.mozilla.org/pub/firefox/releases/)).
+Alternatively, [configure Travis](https://docs.travis-ci.com/user/firefox/) to use a newer version.
+Don't forget to disable auto-updates in your Firefox settings.
 
 ## Cheatsheet
 
