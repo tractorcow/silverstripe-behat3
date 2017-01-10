@@ -7,6 +7,7 @@ use Behat\Behat\Context\Step;
 use Behat\Behat\Event\StepEvent;
 use Behat\Behat\Event\ScenarioEvent;
 use Behat\Mink\Driver\Selenium2Driver;
+use Behat\Mink\Element\NodeElement;
 use SilverStripe\Assets\File;
 use SilverStripe\Assets\Filesystem;
 
@@ -359,20 +360,57 @@ JS;
     }
 
     /**
-     * @Given /^I press the "([^"]*)" button$/
+     * Find visible button with the given text.
+     * Supports data-text-alternate property.
+     *
+     * @param string $text
+     * @return NodeElement|null
      */
-    public function stepIPressTheButton($button)
+    protected function findNamedButton($title)
     {
         $page = $this->getSession()->getPage();
-        $els = $page->findAll('named', array('link_or_button', "'$button'"));
+        // See https://mathiasbynens.be/notes/css-escapes
+        $escapedTitle = addcslashes($title, '!"#$%&\'()*+,-./:;<=>?@[\]^`{|}~');
         $matchedEl = null;
-        foreach ($els as $el) {
-            if ($el->isVisible()) {
-                $matchedEl = $el;
+        $searches = [
+            ['named', ['link_or_button', "'{$title}'"]],
+            ['css', "button[data-text-alternate='{$escapedTitle}']"],
+        ];
+        foreach ($searches as list($type, $arg)) {
+            $buttons = $page->findAll($type, $arg);
+            foreach ($buttons as $el) {
+                if ($el->isVisible()) {
+                    return $el;
+                }
             }
         }
-        assertNotNull($matchedEl, sprintf('%s button not found', $button));
-        $matchedEl->click();
+        return null;
+    }
+
+    /**
+     * Example: I should see a "Submit" button
+     * Example: I should not see a "Delete" button
+     *
+     * @Given /^I should( not? |\s*)see (?:a|an|the) "([^"]*)" button$/
+     */
+    public function iShouldSeeAButton($negative, $text)
+    {
+        $matchedEl = $this->findNamedButton($text);
+        if (trim($negative)) {
+            assertNull($matchedEl, sprintf('%s button found', $text));
+        } else {
+            assertNotNull($matchedEl, sprintf('%s button not found', $text));
+        }
+    }
+
+    /**
+     * @Given /^I press the "([^"]*)" button$/
+     */
+    public function stepIPressTheButton($text)
+    {
+        $button = $this->findNamedButton($text);
+        assertNotNull($button, "{$text} button not found");
+        $button->click();
     }
 
     /**
