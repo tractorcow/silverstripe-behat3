@@ -136,7 +136,7 @@ class FixtureContext extends BehatContext
     /**
      * Example: Given a "page" "Page 1"
      *
-     * @Given /^(?:(an|a|the) )"(?<type>[^"]+)" "(?<id>[^"]+)"$/
+     * @Given /^(?:an|a|the) "([^"]+)" "([^"]+)"$/
      */
     public function stepCreateRecord($type, $id)
     {
@@ -148,7 +148,7 @@ class FixtureContext extends BehatContext
     /**
      * Example: Given a "page" "Page 1" has the "content" "My content"
      *
-     * @Given /^(?:(an|a|the) )"(?<type>[^"]+)" "(?<id>[^"]+)" has (?:(an|a|the) )"(?<field>.*)" "(?<value>.*)"$/
+     * @Given /^(?:an|a|the) "([^"]+)" "([^"]+)" has (?:an|a|the) "(.*)" "(.*)"$/
      */
     public function stepCreateRecordHasField($type, $id, $field, $value)
     {
@@ -173,7 +173,7 @@ class FixtureContext extends BehatContext
      * Example: Given a "page" "Page 1" with "URL"="page-1" and "Content"="my page 1"
      * Example: Given the "page" "Page 1" has "URL"="page-1" and "Content"="my page 1"
      *
-     * @Given /^(?:(an|a|the) )"(?<type>[^"]+)" "(?<id>[^"]+)" (?:(with|has)) (?<data>".*)$/
+     * @Given /^(?:an|a|the) "([^"]+)" "([^"]+)" (?:with|has) (".*)$/
      */
     public function stepCreateRecordWithData($type, $id, $data)
     {
@@ -206,7 +206,7 @@ class FixtureContext extends BehatContext
      * | My Property | foo |
      * | My Boolean | bar |
      *
-     * @Given /^(?:(an|a|the) )"(?<type>[^"]+)" "(?<id>[^"]+)" has the following data$/
+     * @Given /^(?:an|a|the) "([^"]+)" "([^"]+)" has the following data$/
      */
     public function stepCreateRecordWithTable($type, $id, $null, TableNode $fieldsTable)
     {
@@ -231,7 +231,7 @@ class FixtureContext extends BehatContext
      * Example: Given the "page" "Page 1.1" is a child of the "page" "Page1".
      * Note that this change is not published by default
      *
-     * @Given /^(?:(an|a|the) )"(?<type>[^"]+)" "(?<id>[^"]+)" is a (?<relation>[^\s]*) of (?:(an|a|the) )"(?<relationType>[^"]+)" "(?<relationId>[^"]+)"/
+     * @Given /^(?:an|a|the) "([^"]+)" "([^"]+)" is a ([^\s]*) of (?:an|a|the) "([^"]+)" "([^"]+)"/
      */
     public function stepUpdateRecordRelation($type, $id, $relation, $relationType, $relationId)
     {
@@ -277,7 +277,7 @@ class FixtureContext extends BehatContext
      * If the last part of the string (in the "X" relation) is omitted, then the first matching relation will be used.
      *
      * @example I assign the "TaxonomyTerm" "For customers" to the "Page" "Page1"
-     * @Given /^I assign (?:(an|a|the) )"(?<type>[^"]+)" "(?<value>[^"]+)" to (?:(an|a|the) )"(?<relationType>[^"]+)" "(?<relationId>[^"]+)"$/
+     * @Given /^I assign (?:an|a|the) "([^"]+)" "([^"]+)" to (?:an|a|the) "([^"]+)" "([^"]+)"$/
      */
     public function stepIAssignObjToObj($type, $value, $relationType, $relationId)
     {
@@ -290,7 +290,7 @@ class FixtureContext extends BehatContext
      * Assumption: one object has relationship  (has_one, has_many or many_many ) with the other object
      *
      * @example I assign the "TaxonomyTerm" "For customers" to the "Page" "Page1" in the "Terms" relation
-     * @Given /^I assign (?:(an|a|the) )"(?<type>[^"]+)" "(?<value>[^"]+)" to (?:(an|a|the) )"(?<relationType>[^"]+)" "(?<relationId>[^"]+)" in the "(?<relationName>[^"]+)" relation$/
+     * @Given /^I assign (?:an|a|the) "([^"]+)" "([^"]+)" to (?:an|a|the) "([^"]+)" "([^"]+)" in the "([^"]+)" relation$/
      */
     public function stepIAssignObjToObjInTheRelation($type, $value, $relationType, $relationId, $relationName)
     {
@@ -359,7 +359,7 @@ class FixtureContext extends BehatContext
      /**
      * Example: Given the "page" "Page 1" is not published
      *
-     * @Given /^(?:(an|a|the) )"(?<type>[^"]+)" "(?<id>[^"]+)" is (?<state>[^"]*)$/
+     * @Given /^(?:an|a|the) "([^"]+)" "([^"]+)" is ([^"]*)$/
      */
     public function stepUpdateRecordState($type, $id, $state)
     {
@@ -422,7 +422,7 @@ class FixtureContext extends BehatContext
     /**
      * Example: Given a "member" "Admin" belonging to "Admin Group"
      *
-     * @Given /^(?:(an|a|the) )"member" "(?<id>[^"]+)" belonging to "(?<groupId>[^"]+)"$/
+     * @Given /^(?:an|a|the) "member" "([^"]+)" belonging to "([^"]+)"$/
      */
     public function stepCreateMemberWithGroup($id, $groupId)
     {
@@ -438,7 +438,7 @@ class FixtureContext extends BehatContext
     /**
      * Example: Given a "member" "Admin" belonging to "Admin Group" with "Email"="test@test.com"
      *
-     * @Given /^(?:(an|a|the) )"member" "(?<id>[^"]+)" belonging to "(?<groupId>[^"]+)" with (?<data>.*)$/
+     * @Given /^(?:an|a|the) "member" "([^"]+)" belonging to "([^"]+)" with (.*)$/
      */
     public function stepCreateMemberWithGroupAndData($id, $groupId, $data)
     {
@@ -465,7 +465,7 @@ class FixtureContext extends BehatContext
     /**
      * Example: Given a "group" "Admin" with permissions "Access to 'Pages' section" and "Access to 'Files' section"
      *
-     * @Given /^(?:(an|a|the) )"group" "(?<id>[^"]+)" (?:(with|has)) permissions (?<permissionStr>.*)$/
+     * @Given /^(?:an|a|the) "group" "([^"]+)" (?:with|has) permissions (.*)$/
      */
     public function stepCreateGroupWithPermissions($id, $permissionStr)
     {
@@ -503,7 +503,7 @@ class FixtureContext extends BehatContext
      * using its RelativeLink() method to map the record to a URL.
      * Example: Given I go to the "page" "My Page"
      *
-     * @Given /^I go to (?:(an|a|the) )"(?<type>[^"]+)" "(?<id>[^"]+)"/
+     * @Given /^I go to (?:an|a|the) "([^"]+)" "([^"]+)"/
      */
     public function stepGoToNamedRecord($type, $id)
     {
@@ -527,7 +527,7 @@ class FixtureContext extends BehatContext
      * Checks that a file or folder exists in the webroot.
      * Example: There should be a file "assets/Uploads/test.jpg"
      *
-     * @Then /^there should be a (?<type>(file|folder) )"(?<path>[^"]*)"/
+     * @Then /^there should be a ((file|folder) )"([^"]*)"/
      */
     public function stepThereShouldBeAFileOrFolder($type, $path)
     {
@@ -539,7 +539,7 @@ class FixtureContext extends BehatContext
      *
      * Example: there should be a filename "Uploads/test.jpg" with hash "59de0c841f"
      *
-     * @Then /^there should be a filename "(?<filename>[^"]*)" with hash "(?<hash>[a-fA-Z0-9]+)"/
+     * @Then /^there should be a filename "([^"]*)" with hash "([a-fA-Z0-9]+)"/
      */
     public function stepThereShouldBeAFileWithTuple($filename, $hash)
     {
@@ -571,7 +571,7 @@ class FixtureContext extends BehatContext
     }
 
     /**
-     * @Given /^(?:(an|a|the) )"(?<type>[^"]*)" "(?<id>[^"]*)" was (?<mod>(created|last edited)) "(?<time>[^"]*)"$/
+     * @Given /^(?:an|a|the) "([^"]*)" "([^"]*)" was (created|last edited) "([^"]*)"$/
      */
     public function aRecordWasLastEditedRelative($type, $id, $mod, $time)
     {
