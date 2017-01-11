@@ -2,7 +2,7 @@
 
 namespace SilverStripe\BehatExtension\Utility;
 
-use SilverStripe\Control\Email\Mailer;
+use SilverStripe\Dev\TestMailer as BaseTestMailer;
 use SilverStripe\Core\Injector\Injector;
 use TestSessionEnvironment;
 
@@ -11,7 +11,7 @@ use TestSessionEnvironment;
  * but saves emails in {@link TestSessionEnvironment}
  * to share the state between PHP calls (CLI vs. browser).
  */
-class TestMailer extends Mailer
+class TestMailer extends BaseTestMailer
 {
 
     /**
@@ -22,55 +22,6 @@ class TestMailer extends Mailer
     public function __construct()
     {
         $this->testSessionEnvironment = Injector::inst()->get('TestSessionEnvironment');
-    }
-
-    /**
-     * Send a plain-text email.
-     * TestMailer will merely record that the email was asked to be sent, without sending anything.
-     */
-    public function sendPlain($to, $from, $subject, $plainContent, $attachedFiles = false, $customHeaders = false)
-    {
-        $this->saveEmail(array(
-            'Type' => 'plain',
-            'To' => $to,
-            'From' => $from,
-            'Subject' => $subject,
-            'Content' => $plainContent,
-            'PlainContent' => $plainContent,
-            'AttachedFiles' => $attachedFiles,
-            'CustomHeaders' => $customHeaders,
-        ));
-
-        return true;
-    }
-
-    /**
-     * Send a multi-part HTML email
-     * TestMailer will merely record that the email was asked to be sent, without sending anything.
-     */
-    public function sendHTML(
-        $to,
-        $from,
-        $subject,
-        $htmlContent,
-        $attachedFiles = false,
-        $customHeaders = false,
-        $plainContent = false,
-        $inlineImages = false
-    ) {
-
-        $this->saveEmail(array(
-            'Type' => 'html',
-            'To' => $to,
-            'From' => $from,
-            'Subject' => $subject,
-            'Content' => $htmlContent,
-            'PlainContent' => $plainContent,
-            'AttachedFiles' => $attachedFiles,
-            'CustomHeaders' => $customHeaders,
-        ));
-
-        return true;
     }
 
     /**
