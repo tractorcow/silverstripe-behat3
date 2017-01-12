@@ -8,6 +8,8 @@ use Behat\Behat\Event\StepEvent;
 use Behat\Behat\Event\ScenarioEvent;
 use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Element\NodeElement;
+use Behat\Mink\Session;
+use Behat\MinkExtension\Context\RawMinkContext;
 use SilverStripe\Assets\File;
 use SilverStripe\Assets\Filesystem;
 
@@ -60,11 +62,13 @@ class BasicContext extends BehatContext
      * Get Mink session from MinkContext
      *
      * @param string $name
-     * @return \Behat\Mink\Session
+     * @return Session
      */
     public function getSession($name = null)
     {
-        return $this->getMainContext()->getSession($name);
+        /** @var SilverStripeContext $context */
+        $context = $this->getMainContext();
+        return $context->getSession($name);
     }
 
     /**
@@ -477,6 +481,18 @@ JS;
     {
         $this->iClickInTheElement($clickType, $text, $selector);
         $this->iDismissTheDialog();
+    }
+
+    /**
+     * @Given /^I see the text "([^"]+)" in the alert$/
+     */
+    public function iSeeTheDialogText($expected)
+    {
+        $session = $this->getSession();
+        /** @var Selenium2Driver $driver */
+        $driver = $session->getDriver();
+        $text = $driver->getWebDriverSession()->getAlert_text();
+        assertContains($expected, $text);
     }
 
     /**
