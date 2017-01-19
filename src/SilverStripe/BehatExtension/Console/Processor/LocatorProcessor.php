@@ -105,7 +105,7 @@ class LocatorProcessor extends BaseProcessor
             $featuresPath = $currentModulePath.DIRECTORY_SEPARATOR.$pathSuffix.DIRECTORY_SEPARATOR.$featuresPath;
         }
 
-        if($input->getOption('namespace')) {
+        if ($input->getOption('namespace')) {
             $namespace = $input->getOption('namespace');
         } else {
             $namespace = ucfirst($currentModuleName);

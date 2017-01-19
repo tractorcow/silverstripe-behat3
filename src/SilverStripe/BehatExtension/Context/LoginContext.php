@@ -2,13 +2,13 @@
 
 namespace SilverStripe\BehatExtension\Context;
 
-use Behat\Behat\Context\ClosuredContextInterface,
-Behat\Behat\Context\TranslatedContextInterface,
-Behat\Behat\Context\BehatContext,
-Behat\Behat\Definition\Call,
-Behat\Behat\Exception\PendingException;
-use Behat\Gherkin\Node\PyStringNode,
-Behat\Gherkin\Node\TableNode;
+use Behat\Behat\Context\ClosuredContextInterface;
+use Behat\Behat\Context\TranslatedContextInterface;
+use Behat\Behat\Context\BehatContext;
+use Behat\Behat\Definition\Call;
+use Behat\Behat\Exception\PendingException;
+use Behat\Gherkin\Node\PyStringNode;
+use Behat\Gherkin\Node\TableNode;
 
 // PHPUnit
 require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions.php';
@@ -67,7 +67,7 @@ class LoginContext extends BehatContext
     /**
      * Creates a member in a group with the correct permissions.
      * Example: Given I am logged in with "ADMIN" permissions
-     * 
+     *
      * @Given /^I am logged in with "([^"]*)" permissions$/
      */
     public function iAmLoggedInWithPermissions($permCode)
@@ -122,7 +122,7 @@ class LoginContext extends BehatContext
      * @When /^I log in with "(?<username>[^"]*)" and "(?<password>[^"]*)"$/
      */
     public function stepILogInWith($email, $password)
-    {        
+    {
             $c = $this->getMainContext();
             $loginUrl = $c->joinUrlParts($c->getBaseUrl(), $c->getLoginUrl());
             $this->getSession()->visit($loginUrl);
@@ -132,8 +132,8 @@ class LoginContext extends BehatContext
 
         // Try to find visible forms again on login page.
         $visibleForm = null;
-        foreach($forms as $form) {
-            if($form->isVisible() && $form->find('css', '[name=Email]')) {
+        foreach ($forms as $form) {
+            if ($form->isVisible() && $form->find('css', '[name=Email]')) {
                 $visibleForm = $form;
             }
         }
@@ -153,7 +153,7 @@ class LoginContext extends BehatContext
 
         $emailField->setValue($email);
         $passwordField->setValue($password);
-        $submitButton->press(); 
+        $submitButton->press();
     }
 
     /**

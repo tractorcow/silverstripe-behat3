@@ -33,7 +33,7 @@ class InitProcessor extends BaseProcessor
     public function configure(Command $command)
     {
         parent::configure($command);
-
+        
         $command->addOption(
             '--namespace',
             null,
@@ -72,7 +72,7 @@ class InitProcessor extends BaseProcessor
         unset($_GET['flush']);
 
         $featuresPath = $input->getArgument('features');
-        if (!$featuresPath) {
+        if(!$featuresPath) {
             throw new \InvalidArgumentException('Please specify a module name (e.g. "@mymodule")');
         }
 
@@ -86,7 +86,7 @@ class InitProcessor extends BaseProcessor
             }
         if (!$currentModuleName) {
             throw new \InvalidArgumentException('Can not find module to initialize suite.');
-        }
+        } 
 
         // Get path for module
         $module = ModuleLoader::instance()->getManifest()->getModule($currentModuleName);
@@ -96,14 +96,14 @@ class InitProcessor extends BaseProcessor
         $currentModulePath = $module->getPath();
 
         // TODO Retrieve from module definition once that's implemented
-        if ($input->getOption('namespace')) {
+        if($input->getOption('namespace')) {
             $namespace = $input->getOption('namespace');
         } else {
             $namespace = ucfirst($currentModuleName);
         }
         $namespace .= '\\' . $this->container->getParameter('behat.silverstripe_extension.context.namespace_suffix');
 
-        $featuresPath = rtrim($currentModulePath.DIRECTORY_SEPARATOR.$pathSuffix, DIRECTORY_SEPARATOR);
+        $featuresPath = rtrim($currentModulePath.DIRECTORY_SEPARATOR.$pathSuffix,DIRECTORY_SEPARATOR);
         $basePath     = $this->container->getParameter('paths.base').DIRECTORY_SEPARATOR;
         $bootstrapPath = $featuresPath.DIRECTORY_SEPARATOR.'bootstrap';
         $contextPath  = $bootstrapPath.DIRECTORY_SEPARATOR.'Context';
@@ -142,7 +142,7 @@ class InitProcessor extends BaseProcessor
      */
     protected function getFeatureContextSkelet()
     {
-        return <<<'PHP'
+return <<<'PHP'
 <?php
 
 namespace %NAMESPACE%;
@@ -196,14 +196,14 @@ class FeatureContext extends SilverStripeContext {
 
         // Auto-publish pages
         if (class_exists('SiteTree')) {
-            foreach(\ClassInfo::subclassesFor('SiteTree') as $id => $class) {
-                $blueprint = \Injector::inst()->create('FixtureBlueprint', $class);
-                $blueprint->addCallback('afterCreate', function($obj, $identifier, &$data, &$fixtures) {
-                    $obj->publish('Stage', 'Live');
-                });
-                $factory->define($class, $blueprint);
-            }
-        }
+        foreach(\ClassInfo::subclassesFor('SiteTree') as $id => $class) {
+            $blueprint = \Injector::inst()->create('FixtureBlueprint', $class);
+            $blueprint->addCallback('afterCreate', function($obj, $identifier, &$data, &$fixtures) {
+                $obj->publish('Stage', 'Live');
+            });
+            $factory->define($class, $blueprint);
+        } 
+    }
     }
 
     public function setMinkParameters(array $parameters) {

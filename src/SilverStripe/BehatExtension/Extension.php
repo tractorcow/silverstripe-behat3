@@ -6,7 +6,6 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
-
 use Behat\Testwork\ServiceContainer\ExtensionManager;
 use Behat\Testwork\ServiceContainer\Extension as ExtensionInterface;
 
@@ -35,14 +34,16 @@ class Extension implements ExtensionInterface
     /**
     * {@inheritDoc}
     */
-    public function getConfigKey() {
+    public function getConfigKey()
+    {
         return self::SILVERSTRIPE_ID;
     }
 
     /**
     * {@inheritDoc}
     */
-    public function initialize(ExtensionManager $extensionManager) {
+    public function initialize(ExtensionManager $extensionManager)
+    {
     }
 
     /**
