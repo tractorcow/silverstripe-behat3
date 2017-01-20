@@ -11,12 +11,15 @@ namespace SilverStripe\BehatExtension\Context;
  * with this source code in the file LICENSE.
  */
 
+use Behat\Mink\Session;
+use Behat\MinkExtension\Context\MinkAwareContext;
+
 /**
  * SilverStripe aware interface for contexts.
  *
  * @author Michał Ochman <ochman.d.michal@gmail.com>
  */
-interface SilverStripeAwareContextInterface
+interface SilverStripeAwareContext extends MinkAwareContext
 {
     /**
      * Sets SilverStripe instance.

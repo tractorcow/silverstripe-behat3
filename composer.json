@@ -28,9 +28,9 @@
         "symfony/finder": "^3.2"
 	},
 	"autoload": {
-		"psr-0": {
-			"SilverStripe\\BehatExtension": "src/"
-		}
+        "psr-4": {
+            "SilverStripe\\BehatExtension\\": "src/"
+        }
 	},
 	"autoload-dev": {
 		"psr-0": {

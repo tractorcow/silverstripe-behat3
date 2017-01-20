@@ -2,19 +2,21 @@
 
 namespace SilverStripe\BehatExtension\Context;
 
-use Behat\Behat\Context\ClosuredContextInterface;
-use Behat\Behat\Context\TranslatedContextInterface;
-use Behat\Behat\Context\BehatContext;
+use Behat\Behat\Context\Context;
 use Behat\Behat\Definition\Call;
-use Behat\Behat\Event\StepEvent;
-use Behat\Behat\Event\ScenarioEvent;
-use Behat\Behat\Exception\PendingException;
+use Behat\Behat\Hook\Scope\AfterScenarioScope;
+use Behat\Behat\Hook\Scope\AfterStepScope;
+use Behat\Behat\Hook\Scope\BeforeStepScope;
+use Behat\Behat\Hook\Scope\StepScope;
 use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Session;
-use Behat\MinkExtension\Context\RawMinkContext;
+use Behat\Testwork\Tester\Result\TestResult;
+use Exception;
 use SilverStripe\Assets\File;
 use SilverStripe\Assets\Filesystem;
+use WebDriver\Exception as WebDriverException;
+use WebDriver\Session as WebDriverSession;
 
 // PHPUnit
 require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions.php';
@@ -27,13 +29,21 @@ require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions
  * Handles redirections.
  * Handles AJAX enabled links, buttons and forms - jQuery is assumed.
  */
-class BasicContext extends BehatContext
+class BasicContext implements Context
 {
+    use MainContextAwareTrait;
+
+    /**
+     * Context arguments
+     *
+     * @var array
+     */
     protected $context;
 
     /**
      * Date format in date() syntax
-     * @var String
+     *
+     * @var string
      */
     protected $dateFormat = 'Y-m-d';
 
@@ -79,14 +89,16 @@ class BasicContext extends BehatContext
      *
      * Excluding scenarios with @modal tag is required,
      * because modal dialogs stop any JS interaction
+     *
+     * @param AfterStepScope $event
      */
-    public function appendErrorHandlerBeforeStep(StepEvent $event)
+    public function appendErrorHandlerBeforeStep(AfterStepScope $event)
     {
         try {
             $javascript = <<<JS
 window.onerror = function(message, file, line, column, error) {
-    var body = document.getElementsByTagName('body')[0];
-	var msg = message + " in " + file + ":" + line + ":" + column;
+    let body = document.getElementsByTagName('body')[0];
+	let msg = message + " in " + file + ":" + line + ":" + column;
 	if(error !== undefined && error.stack !== undefined) {
 		msg += "\\nSTACKTRACE:\\n" + error.stack;
 	}
@@ -101,7 +113,7 @@ if ('undefined' !== typeof window.jQuery) {
 JS;
 
             $this->getSession()->executeScript($javascript);
-        } catch (\WebDriver\Exception $e) {
+        } catch (WebDriverException $e) {
             $this->logException($e);
         }
     }
@@ -111,8 +123,10 @@ JS;
      *
      * Excluding scenarios with @modal tag is required,
      * because modal dialogs stop any JS interaction
+     *
+     * @param AfterStepScope $event
      */
-    public function readErrorHandlerAfterStep(StepEvent $event)
+    public function readErrorHandlerAfterStep(AfterStepScope $event)
     {
         try {
             $page = $this->getSession()->getPage();
@@ -132,7 +146,7 @@ if ('undefined' !== typeof window.jQuery) {
 JS;
 
             $this->getSession()->executeScript($javascript);
-        } catch (\WebDriver\Exception $e) {
+        } catch (WebDriverException $e) {
             $this->logException($e);
         }
     }
@@ -143,8 +157,9 @@ JS;
      * Event handlers are removed after one run.
      *
      * @BeforeStep
+     * @param BeforeStepScope $event
      */
-    public function handleAjaxBeforeStep(StepEvent $event)
+    public function handleAjaxBeforeStep(BeforeStepScope $event)
     {
         try {
             $ajaxEnabledSteps = $this->getMainContext()->getAjaxSteps();
@@ -179,7 +194,7 @@ if ('undefined' !== typeof window.jQuery && 'undefined' !== typeof window.jQuery
 JS;
             $this->getSession()->wait(500); // give browser a chance to process and render response
             $this->getSession()->executeScript($javascript);
-        } catch (\WebDriver\Exception $e) {
+        } catch (WebDriverException $e) {
             $this->logException($e);
         }
     }
@@ -191,8 +206,9 @@ JS;
      * Don't unregister handler if we're dealing with modal windows
      *
      * @AfterStep ~@modal
+     * @param AfterStepScope $event
      */
-    public function handleAjaxAfterStep(StepEvent $event)
+    public function handleAjaxAfterStep(AfterStepScope $event)
     {
         try {
             $ajaxEnabledSteps = $this->getMainContext()->getAjaxSteps();
@@ -212,7 +228,7 @@ window.jQuery(document).off('ajaxSuccess.ss.test.behaviour');
 }
 JS;
             $this->getSession()->executeScript($javascript);
-        } catch (\WebDriver\Exception $e) {
+        } catch (WebDriverException $e) {
             $this->logException($e);
         }
     }
@@ -236,15 +252,18 @@ JS;
      * Works only with Selenium2Driver.
      *
      * @AfterStep
+     * @param AfterStepScope $event
      */
-    public function takeScreenshotAfterFailedStep(StepEvent $event)
+    public function takeScreenshotAfterFailedStep(AfterStepScope $event)
     {
-        if (4 === $event->getResult()) {
-            try {
-                $this->takeScreenshot($event);
-            } catch (\WebDriver\Exception $e) {
-                $this->logException($e);
-            }
+        // Check failure code
+        if ($event->getTestResult()->getResultCode() !== TestResult::FAILED) {
+            return;
+        }
+        try {
+            $this->takeScreenshot($event);
+        } catch (WebDriverException $e) {
+            $this->logException($e);
         }
     }
 
@@ -252,24 +271,25 @@ JS;
      * Close modal dialog if test scenario fails on CMS page
      *
      * @AfterScenario
+     * @param AfterScenarioScope $event
      */
-    public function closeModalDialog(ScenarioEvent $event)
+    public function closeModalDialog(AfterScenarioScope $event)
     {
         try {
             // Only for failed tests on CMS page
-            if (4 === $event->getResult()) {
+            if ($event->getTestResult()->getResultCode() === TestResult::FAILED) {
                 $cmsElement = $this->getSession()->getPage()->find('css', '.cms');
                 if ($cmsElement) {
                     try {
                         // Navigate away triggered by reloading the page
                         $this->getSession()->reload();
-                        $this->getSession()->getDriver()->getWebDriverSession()->accept_alert();
-                    } catch (\WebDriver\Exception $e) {
+                        $this->getWebDriverSession()->accept_alert();
+                    } catch (WebDriverException $e) {
                         // no-op, alert might not be present
                     }
                 }
             }
-        } catch (\WebDriver\Exception $e) {
+        } catch (WebDriverException $e) {
             $this->logException($e);
         }
     }
@@ -278,8 +298,9 @@ JS;
      * Delete any created files and folders from assets directory
      *
      * @AfterScenario @assets
+     * @param AfterScenarioScope $event
      */
-    public function cleanAssetsAfterScenario(ScenarioEvent $event)
+    public function cleanAssetsAfterScenario(AfterScenarioScope $event)
     {
         foreach (File::get() as $file) {
             $file->delete();
@@ -287,27 +308,34 @@ JS;
         Filesystem::removeFolder(ASSETS_PATH, true);
     }
 
-    public function takeScreenshot(StepEvent $event)
+    /**
+     * Take a nice screenshot
+     *
+     * @param StepScope $event
+     */
+    public function takeScreenshot(StepScope $event)
     {
+        // Validate driver
         $driver = $this->getSession()->getDriver();
-        // quit silently when unsupported
         if (!($driver instanceof Selenium2Driver)) {
+            file_put_contents('php://stdout', 'ScreenShots are only supported for Selenium2Driver: skipping');
             return;
         }
 
-        $parent = $event->getLogicalParent();
-        $feature = $parent->getFeature();
+        $feature = $event->getFeature();
         $step = $event->getStep();
         $screenshotPath = null;
 
+        // Check paths are configured
         $path = $this->getMainContext()->getScreenshotPath();
         if (!$path) {
+            file_put_contents('php://stdout', 'ScreenShots path not configured: skipping');
             return;
-        } // quit silently when path is not set
+        }
 
         Filesystem::makeFolder($path);
         $path = realpath($path);
-        
+
         if (!file_exists($path)) {
             file_put_contents('php://stderr', sprintf('"%s" is not valid directory and failed to create it' . PHP_EOL, $path));
             return;
@@ -329,22 +357,6 @@ JS;
     }
 
     /**
-     * @Then /^I should be redirected to "([^"]+)"/
-     */
-    public function stepIShouldBeRedirectedTo($url)
-    {
-        if ($this->getMainContext()->canIntercept()) {
-            $client = $this->getSession()->getDriver()->getClient();
-            $client->followRedirects(true);
-            $client->followRedirect();
-
-            $url = $this->getMainContext()->joinUrlParts($this->context['base_url'], $url);
-
-            assertTrue($this->getMainContext()->isCurrentUrlSimilarTo($url), sprintf('Current URL is not %s', $url));
-        }
-    }
-
-    /**
      * @Given /^the page can't be found/
      */
     public function stepPageCantBeFound()
@@ -360,6 +372,8 @@ JS;
 
     /**
      * @Given /^I wait (?:for )?([\d\.]+) second(?:s?)$/
+     *
+     * @param float $secs
      */
     public function stepIWaitFor($secs)
     {
@@ -370,7 +384,7 @@ JS;
      * Find visible button with the given text.
      * Supports data-text-alternate property.
      *
-     * @param string $text
+     * @param string $title
      * @return NodeElement|null
      */
     protected function findNamedButton($title)
@@ -385,9 +399,10 @@ JS;
         ];
         foreach ($searches as list($type, $arg)) {
             $buttons = $page->findAll($type, $arg);
-            foreach ($buttons as $el) {
-                if ($el->isVisible()) {
-                    return $el;
+            /** @var NodeElement $button */
+            foreach ($buttons as $button) {
+                if ($button->isVisible()) {
+                    return $button;
                 }
             }
         }
@@ -399,6 +414,8 @@ JS;
      * Example: I should not see a "Delete" button
      *
      * @Given /^I should( not? |\s*)see (?:a|an|the) "([^"]*)" button$/
+     * @param string $negative
+     * @param string $text
      */
     public function iShouldSeeAButton($negative, $text)
     {
@@ -412,6 +429,7 @@ JS;
 
     /**
      * @Given /^I press the "([^"]*)" button$/
+     * @param string $text
      */
     public function stepIPressTheButton($text)
     {
@@ -426,6 +444,7 @@ JS;
      * Example2: I follow the "Remove current combo" link, confirming the dialog
      *
      * @Given /^I (?:press|follow) the "([^"]*)" (?:button|link), confirming the dialog$/
+     * @param string $button
      */
     public function stepIPressTheButtonConfirmingTheDialog($button)
     {
@@ -438,6 +457,7 @@ JS;
      * Example: I follow the "Remove current combo" link, dismissing the dialog
      *
      * @Given /^I (?:press|follow) the "([^"]*)" (?:button|link), dismissing the dialog$/
+     * @param string $button
      */
     public function stepIPressTheButtonDismissingTheDialog($button)
     {
@@ -447,6 +467,9 @@ JS;
 
     /**
      * @Given /^I (click|double click) "([^"]*)" in the "([^"]*)" element$/
+     * @param string $clickType
+     * @param string $text
+     * @param string $selector
      */
     public function iClickInTheElement($clickType, $text, $selector)
     {
@@ -464,22 +487,29 @@ JS;
     }
 
     /**
-    * Needs to be in single command to avoid "unexpected alert open" errors in Selenium.
-    * Example: I click "Delete" in the ".actions" element, confirming the dialog
-    *
-    * @Given /^I (click|double click) "([^"]*)" in the "([^"]*)" element, confirming the dialog$/
-    */
+     * Needs to be in single command to avoid "unexpected alert open" errors in Selenium.
+     * Example: I click "Delete" in the ".actions" element, confirming the dialog
+     *
+     * @Given /^I (click|double click) "([^"]*)" in the "([^"]*)" element, confirming the dialog$/
+     * @param string $clickType
+     * @param string $text
+     * @param string $selector
+     */
     public function iClickInTheElementConfirmingTheDialog($clickType, $text, $selector)
     {
         $this->iClickInTheElement($clickType, $text, $selector);
         $this->iConfirmTheDialog();
     }
-   /**
-    * Needs to be in single command to avoid "unexpected alert open" errors in Selenium.
-    * Example: I click "Delete" in the ".actions" element, dismissing the dialog
-    *
-    * @Given /^I (click|double click) "([^"]*)" in the "([^"]*)" element, dismissing the dialog$/
-    */
+
+    /**
+     * Needs to be in single command to avoid "unexpected alert open" errors in Selenium.
+     * Example: I click "Delete" in the ".actions" element, dismissing the dialog
+     *
+     * @Given /^I (click|double click) "([^"]*)" in the "([^"]*)" element, dismissing the dialog$/
+     * @param string $clickType
+     * @param string $text
+     * @param string $selector
+     */
     public function iClickInTheElementDismissingTheDialog($clickType, $text, $selector)
     {
         $this->iClickInTheElement($clickType, $text, $selector);
@@ -488,6 +518,7 @@ JS;
 
     /**
      * @Given /^I see the text "([^"]+)" in the alert$/
+     * @param string $expected
      */
     public function iSeeTheDialogText($expected)
     {
@@ -500,13 +531,11 @@ JS;
 
     /**
      * @Given /^I type "([^"]*)" into the dialog$/
+     * @param string $data
      */
     public function iTypeIntoTheDialog($data)
     {
-        $data = array(
-            'text' => $data,
-        );
-        $this->getSession()->getDriver()->getWebDriverSession()->postAlert_text($data);
+        $this->getWebDriverSession()->postAlert_text([ 'text' => $data ]);
     }
 
     /**
@@ -514,7 +543,7 @@ JS;
      */
     public function iConfirmTheDialog()
     {
-        $this->getSession()->getDriver()->getWebDriverSession()->accept_alert();
+        $this->getWebDriverSession()->accept_alert();
         $this->handleAjaxTimeout();
     }
 
@@ -523,18 +552,36 @@ JS;
      */
     public function iDismissTheDialog()
     {
-        $this->getSession()->getDriver()->getWebDriverSession()->dismiss_alert();
+        $this->getWebDriverSession()->dismiss_alert();
         $this->handleAjaxTimeout();
     }
 
     /**
+     * Get Selenium webdriver session.
+     * Note: Will fail if current driver isn't Selenium2Driver
+     *
+     * @return WebDriverSession
+     */
+    protected function getWebDriverSession()
+    {
+        $driver = $this->getSession()->getDriver();
+        if (! $driver instanceof Selenium2Driver) {
+            throw new \InvalidArgumentException("Not supported for non-selenium2 drivers");
+        }
+        return $driver->getWebDriverSession();
+    }
+
+    /**
      * @Given /^(?:|I )attach the file "(?P<path>[^"]*)" to "(?P<field>(?:[^"]|\\")*)" with HTML5$/
+     * @param string $field
+     * @param string $path
+     * @return Call\Given
      */
     public function iAttachTheFileTo($field, $path)
     {
         // Remove wrapped button styling to make input field accessible to Selenium
         $js = <<<JS
-var input = jQuery('[name="$field"]');
+let input = jQuery('[name="$field"]');
 if(input.closest('.ss-uploadfield-item-info').length) {
     while(!input.parent().is('.ss-uploadfield-item-info')) input = input.unwrap();
 }
@@ -543,19 +590,22 @@ JS;
         $this->getSession()->executeScript($js);
         $this->getSession()->wait(1000);
 
-        return new Call\Given(sprintf('I attach the file "%s" to "%s"', $path, $field));
+        return $this->getMainContext()->attachFileToField($field, $path);
     }
 
     /**
      * Select an individual input from within a group, matched by the top-most label.
      *
      * @Given /^I select "([^"]*)" from "([^"]*)" input group$/
+     * @param string $value
+     * @param string $labelText
      */
     public function iSelectFromInputGroup($value, $labelText)
     {
         $page = $this->getSession()->getPage();
         $parent = null;
 
+        /** @var NodeElement $label */
         foreach ($page->findAll('css', 'label') as $label) {
             if ($label->getText() == $labelText) {
                 $parent = $label->getParent();
@@ -566,6 +616,7 @@ JS;
             throw new \InvalidArgumentException(sprintf('Input group with label "%s" cannot be found', $labelText));
         }
 
+        /** @var NodeElement $option */
         foreach ($parent->findAll('css', 'label') as $option) {
             if ($option->getText() == $value) {
                 $input = null;
@@ -611,6 +662,9 @@ JS;
      * Customize through {@link setTimeFormat()}.
      *
      * @Transform /^(?:(the|a)) time of (?<val>.*)$/
+     * @param string $prefix
+     * @param string $val
+     * @return false|string
      */
     public function castRelativeToAbsoluteTime($prefix, $val)
     {
@@ -630,6 +684,9 @@ JS;
      * the 12th of October 2013. Customize through {@link setDatetimeFormat()}.
      *
      * @Transform /^(?:(the|a)) datetime of (?<val>.*)$/
+     * @param string $prefix
+     * @param string $val
+     * @return false|string
      */
     public function castRelativeToAbsoluteDatetime($prefix, $val)
     {
@@ -649,6 +706,9 @@ JS;
      * the 12th of October 2013. Customize through {@link setDateFormat()}.
      *
      * @Transform /^(?:(the|a)) date of (?<val>.*)$/
+     * @param string $prefix
+     * @param string $val
+     * @return false|string
      */
     public function castRelativeToAbsoluteDate($prefix, $val)
     {
@@ -699,6 +759,9 @@ JS;
      *
      * @Then /^the "(?P<name>(?:[^"]|\\")*)" (?P<type>(?:(field|button))) should (?P<negate>(?:(not |)))be disabled/
      * @Then /^the (?P<type>(?:(field|button))) "(?P<name>(?:[^"]|\\")*)" should (?P<negate>(?:(not |)))be disabled/
+     * @param $name
+     * @param $type
+     * @param $negate
      */
     public function stepFieldShouldBeDisabled($name, $type, $negate)
     {
@@ -707,10 +770,11 @@ JS;
             $element = $page->findField($name);
         } else {
             $element = $page->find('named', array(
-                'button', $this->getSession()->getSelectorsHandler()->xpathLiteral($name)
+                'button',
+                $this->getMainContext()->getXpathEscaper()->escapeLiteral($name)
             ));
         }
-        
+
         assertNotNull($element, sprintf("Element '%s' not found", $name));
 
         $disabledAttribute = $element->getAttribute('disabled');
@@ -728,6 +792,7 @@ JS;
      *
      * @Then /^the "(?P<field>(?:[^"]|\\")*)" field should be enabled/
      * @Then /^the field "(?P<field>(?:[^"]|\\")*)" should be enabled/
+     * @param $field
      */
     public function stepFieldShouldBeEnabled($field)
     {
@@ -748,13 +813,16 @@ JS;
      * Example: Given I follow "Select" in the "My Login Form" region
      *
      * @Given /^I (?:follow|click) "(?P<link>[^"]*)" in the "(?P<region>[^"]*)" region$/
+     * @param $link
+     * @param $region
+     * @throws \Exception
      */
     public function iFollowInTheRegion($link, $region)
     {
         $context = $this->getMainContext();
         $regionObj = $context->getRegionObj($region);
         assertNotNull($regionObj);
-        
+
         $linkObj = $regionObj->findLink($link);
         if (empty($linkObj)) {
             throw new \Exception(sprintf('The link "%s" was not found in the region "%s" 
@@ -770,6 +838,10 @@ JS;
      * Example: Given I fill in "Hello" with "World"
      *
      * @Given /^I fill in "(?P<field>[^"]*)" with "(?P<value>[^"]*)" in the "(?P<region>[^"]*)" region$/
+     * @param $field
+     * @param $value
+     * @param $region
+     * @throws \Exception
      */
     public function iFillinTheRegion($field, $value, $region)
     {
@@ -785,7 +857,7 @@ JS;
 
         $regionObj->fillField($field, $value);
     }
-    
+
 
     /**
      * Asserts text in a specific region (an element identified by a CSS selector, a "data-title" attribute,
@@ -796,6 +868,10 @@ JS;
      * Example: Given I should not see "My Text" in the "My Login Form" region
      *
      * @Given /^I should (?P<negate>(?:(not |)))see "(?P<text>[^"]*)" in the "(?P<region>[^"]*)" region$/
+     * @param $negate
+     * @param $text
+     * @param $region
+     * @throws \Exception
      */
     public function iSeeTextInRegion($negate, $text, $region)
     {
@@ -836,19 +912,23 @@ JS;
      * Selects the specified radio button
      *
      * @Given /^I select the "([^"]*)" radio button$/
+     * @param $radioLabel
      */
     public function iSelectTheRadioButton($radioLabel)
     {
         $session = $this->getSession();
-        $radioButton = $session->getPage()->find('named', array(
-                      'radio', $this->getSession()->getSelectorsHandler()->xpathLiteral($radioLabel)
-                  ));
+        $radioButton = $session->getPage()->find('named', [
+            'radio',
+            $this->getMainContext()->getXpathEscaper()->escapeLiteral($radioLabel)
+        ]);
         assertNotNull($radioButton);
         $session->getDriver()->click($radioButton->getXPath());
     }
 
     /**
      * @Then /^the "([^"]*)" table should contain "([^"]*)"$/
+     * @param $selector
+     * @param $text
      */
     public function theTableShouldContain($selector, $text)
     {
@@ -860,6 +940,8 @@ JS;
 
     /**
      * @Then /^the "([^"]*)" table should not contain "([^"]*)"$/
+     * @param $selector
+     * @param $text
      */
     public function theTableShouldNotContain($selector, $text)
     {
@@ -871,6 +953,8 @@ JS;
 
     /**
      * @Given /^I click on "([^"]*)" in the "([^"]*)" table$/
+     * @param $text
+     * @param $selector
      */
     public function iClickOnInTheTable($text, $selector)
     {
@@ -889,11 +973,12 @@ JS;
      * - fieldset[data-name] table
      * - table caption
      *
-     * @return Behat\Mink\Element\NodeElement
+     * @param $selector
+     * @return NodeElement
      */
     protected function getTable($selector)
     {
-        $selector = $this->getSession()->getSelectorsHandler()->xpathLiteral($selector);
+        $selector = $this->getMainContext()->getXpathEscaper()->escapeLiteral($selector);
         $page = $this->getSession()->getPage();
         $candidates = $page->findAll(
             'xpath',
@@ -917,6 +1002,7 @@ JS;
         assertTrue((bool)$candidates, 'Could not find any table elements');
 
         $table = null;
+        /** @var NodeElement $candidate */
         foreach ($candidates as $candidate) {
             if (!$table && $candidate->isVisible()) {
                 $table = $candidate;
@@ -932,6 +1018,10 @@ JS;
      * Checks the order of two texts.
      * Assumptions: the two texts appear in their conjunct parent element once
      * @Then /^I should see the text "(?P<textBefore>(?:[^"]|\\")*)" (before|after) the text "(?P<textAfter>(?:[^"]|\\")*)" in the "(?P<element>[^"]*)" element$/
+     * @param $textBefore
+     * @param $order
+     * @param $textAfter
+     * @param $element
      */
     public function theTextBeforeAfter($textBefore, $order, $textAfter, $element)
     {
@@ -953,17 +1043,19 @@ JS;
     }
 
     /**
-    * Wait until a certain amount of seconds till I see an element  identified by a CSS selector.
-    *
-    * Example: Given I wait for 10 seconds until I see the ".css_element" element
-    *
-    * @Given /^I wait for (\d+) seconds until I see the "([^"]*)" element$/
-    **/
+     * Wait until a certain amount of seconds till I see an element  identified by a CSS selector.
+     *
+     * Example: Given I wait for 10 seconds until I see the ".css_element" element
+     *
+     * @Given /^I wait for (\d+) seconds until I see the "([^"]*)" element$/
+     * @param int $wait
+     * @param $selector
+     */
     public function iWaitXUntilISee($wait, $selector)
     {
         $page = $this->getSession()->getPage();
 
-        $this->spin(function ($page) use ($page, $selector) {
+        $this->spin(function () use ($page, $selector) {
             $element = $page->find('css', $selector);
 
             if (empty($element)) {
@@ -981,11 +1073,12 @@ JS;
      * Example: Given I wait until I see the "header .login-form" element
      *
      * @Given /^I wait until I see the "([^"]*)" element$/
+     * @param $selector
      */
     public function iWaitUntilISee($selector)
     {
         $page = $this->getSession()->getPage();
-        $this->spin(function ($page) use ($page, $selector) {
+        $this->spin(function () use ($page, $selector) {
             $element = $page->find('css', $selector);
             if (empty($element)) {
                 return false;
@@ -1002,12 +1095,13 @@ JS;
      * Example: Given I wait until I see the text "Welcome back, John!"
      *
      * @Given /^I wait until I see the text "([^"]*)"$/
+     * @param $text
      */
     public function iWaitUntilISeeText($text)
     {
         $page = $this->getSession()->getPage();
         $session = $this->getSession();
-        $this->spin(function ($page) use ($page, $session, $text) {
+        $this->spin(function () use ($page, $session, $text) {
             $element = $page->find(
                 'xpath',
                 $session->getSelectorsHandler()->selectorToXpath("xpath", ".//*[contains(text(), '$text')]")
@@ -1046,6 +1140,8 @@ JS;
      * Example: Given I scroll to the "My Date" field
      *
      * @Given /^I scroll to the "([^"]*)" (field|link|button)$/
+     * @param $locator
+     * @param $type
      */
     public function iScrollToField($locator, $type)
     {
@@ -1069,6 +1165,7 @@ JS;
      * Example: Given I scroll to the ".css_element" element
      *
      * @Given /^I scroll to the "(?P<locator>(?:[^"]|\\")*)" element$/
+     * @param $locator
      */
     public function iScrollToElement($locator)
     {
@@ -1118,12 +1215,13 @@ JS;
     }
 
 
-
     /**
      * We have to catch exceptions and log somehow else otherwise behat falls over
+     *
+     * @param Exception $exception
      */
-    protected function logException($e)
+    protected function logException(Exception $exception)
     {
-        file_put_contents('php://stderr', 'Exception caught: '.$e);
+        file_put_contents('php://stderr', 'Exception caught: ' . $exception->getMessage());
     }
 }

@@ -21,7 +21,7 @@ class MinkExtensionBaseUrlPass implements CompilerPassInterface
      */
     public function process(ContainerBuilder $container)
     {
-        $frameworkPath = $container->getParameter('behat.silverstripe_extension.framework_path');
+        $frameworkPath = $container->getParameter('silverstripe_extension.framework_path');
 
         global $_FILE_TO_URL_MAPPING;
         if ($container->getParameter('behat.mink.base_url')) {

@@ -3,6 +3,7 @@
 namespace SilverStripe\BehatExtension\Context;
 
 use Behat\Behat\Context\BehatContext;
+use Behat\Behat\Context\Context;
 use Behat\Behat\Context\Step;
 use Behat\Behat\Event\ScenarioEvent;
 use Behat\Gherkin\Node\TableNode;
@@ -19,8 +20,10 @@ require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions
 /**
  * Context used to define steps related to email sending.
  */
-class EmailContext extends BehatContext
+class EmailContext implements Context
 {
+    use MainContextAwareTrait;
+
     protected $context;
 
     /**

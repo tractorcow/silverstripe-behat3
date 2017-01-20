@@ -3,6 +3,7 @@
 namespace SilverStripe\BehatExtension\Context;
 
 use Behat\Behat\Context\ClosuredContextInterface;
+use Behat\Behat\Context\Context;
 use Behat\Behat\Context\TranslatedContextInterface;
 use Behat\Behat\Context\BehatContext;
 use Behat\Behat\Definition\Call;
@@ -10,16 +11,15 @@ use Behat\Behat\Exception\PendingException;
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
 
-// PHPUnit
-require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions.php';
-
 /**
  * LoginContext
  *
  * Context used to define steps related to login and logout functionality
  */
-class LoginContext extends BehatContext
+class LoginContext implements Context
 {
+    use MainContextAwareTrait;
+
     protected $context;
 
     /**
@@ -77,7 +77,7 @@ class LoginContext extends BehatContext
             if (!$group) {
                 $group = Injector::inst()->create('SilverStripe\\Security\\Group');
             }
- 
+
             $group->Title = "$permCode group";
             $group->write();
 
@@ -139,7 +139,7 @@ class LoginContext extends BehatContext
         }
 
         assertNotNull($visibleForm, 'Could not find login form');
-        
+
         $emailField = $visibleForm->find('css', '[name=Email]');
         $passwordField = $visibleForm->find('css', '[name=Password]');
         $submitButton = $visibleForm->find('css', '[type=submit]');

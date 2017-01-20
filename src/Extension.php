@@ -21,6 +21,8 @@ use Behat\Testwork\ServiceContainer\Extension as ExtensionInterface;
 /**
  * SilverStripe extension for Behat class.
  *
+ * Configured by adding `SilverStripe\BehatExtension\Extension` to your behat.yml
+ *
  * @author Michał Ochman <ochman.d.michal@gmail.com>
  */
 class Extension implements ExtensionInterface
@@ -39,23 +41,17 @@ class Extension implements ExtensionInterface
         return self::SILVERSTRIPE_ID;
     }
 
-    /**
-    * {@inheritDoc}
-    */
     public function initialize(ExtensionManager $extensionManager)
     {
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function load(ContainerBuilder $container, array $config)
     {
         if (!isset($config['framework_path'])) {
             throw new \InvalidArgumentException('Specify `framework_path` parameter for silverstripe_extension');
         }
 
-        $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/services'));
+        $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../../../config/services'));
         $loader->load('silverstripe.yml');
 
         $behatBasePath = $container->getParameter('paths.base');

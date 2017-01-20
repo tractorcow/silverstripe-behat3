@@ -5,7 +5,7 @@ namespace SilverStripe\BehatExtension\Context\Initializer;
 use Behat\Behat\Context\Initializer\ContextInitializer;
 use Behat\Behat\Context\Context;
 
-use SilverStripe\BehatExtension\Context\SilverStripeAwareContextInterface;
+use SilverStripe\BehatExtension\Context\SilverStripeAwareContext;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 
@@ -26,9 +26,9 @@ use SilverStripe\Dev\SapphireTest;
  */
 class SilverStripeAwareInitializer implements ContextInitializer
 {
-    
+
     private $databaseName;
-    
+
     /**
      * @var array
      */
@@ -63,6 +63,7 @@ class SilverStripeAwareInitializer implements ContextInitializer
      * Initializes initializer.
      *
      * @param string $frameworkPath
+     * @param string $bootstrapFile
      */
     public function __construct($frameworkPath)
     {
@@ -104,19 +105,18 @@ class SilverStripeAwareInitializer implements ContextInitializer
     /**
      * Checks if initializer supports provided context.
      *
-     * @param ContextInterface $context
-     *
+     * @param Context $context
      * @return Boolean
      */
-    public function supports(ContextInterface $context)
+    public function supports(Context $context)
     {
-        return $context instanceof SilverStripeAwareContextInterface;
+        return $context instanceof SilverStripeAwareContext;
     }
 
     /**
      * Initializes provided context.
      *
-     * @param ContextInterface $context
+     * @param Context $context
      */
     public function initializeContext(Context $context)
     {
