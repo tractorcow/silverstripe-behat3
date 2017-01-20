@@ -7,6 +7,8 @@ use Behat\Behat\Context\ClassGuesser\ClassGuesserInterface;
 /**
  * Module context class guesser.
  * Provides module context class if found.
+ *
+ * @todo upgrade for behat3
  */
 class ModuleContextClassGuesser implements ClassGuesserInterface
 {

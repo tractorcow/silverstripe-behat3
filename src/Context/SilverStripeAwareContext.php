@@ -33,4 +33,39 @@ interface SilverStripeAwareContext extends MinkAwareContext
      * @param array $ajaxSteps Array of step name parts to match
      */
     public function setAjaxSteps($ajaxSteps);
+
+    /**
+     * Set timeout in millisceonds
+     *
+     * @param int $ajaxTimeout
+     */
+    public function setAjaxTimeout($ajaxTimeout);
+
+    /**
+     * Set admin url
+     *
+     * @param string $adminUrl
+     */
+    public function setAdminUrl($adminUrl);
+
+    /**
+     * Set login url
+     *
+     * @param string $loginUrl
+     */
+    public function setLoginUrl($loginUrl);
+
+    /**
+     * Set path to screenshots dir
+     *
+     * @param string $screenshotPath
+     */
+    public function setScreenshotPath($screenshotPath);
+
+    /**
+     * I have no idea
+     *
+     * @param $regionMap
+     */
+    public function setRegionMap($regionMap);
 }

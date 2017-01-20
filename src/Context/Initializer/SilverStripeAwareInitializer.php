@@ -54,10 +54,12 @@ class SilverStripeAwareInitializer implements ContextInitializer
      */
     protected $screenshotPath;
 
-	/**
-	 * @var object {@link TestSessionEnvironment}
-	 */
-	protected $testSessionEnvironment;
+    /**
+     * @var object {@link TestSessionEnvironment}
+     */
+    protected $testSessionEnvironment;
+
+    protected $regionMap;
 
     /**
      * Initializes initializer.
@@ -74,19 +76,19 @@ class SilverStripeAwareInitializer implements ContextInitializer
         // Remove the error handler so that PHPUnit can add its own
         restore_error_handler();
 
-		file_put_contents('php://stdout', "Creating test session environment" . PHP_EOL);
+        file_put_contents('php://stdout', "Creating test session environment" . PHP_EOL);
 
         $testEnv = Injector::inst()->get('TestSessionEnvironment');
-		$testEnv->startTestSession(array(
-			'createDatabase' => true
-		));
+        $testEnv->startTestSession(array(
+            'createDatabase' => true
+        ));
 
-		$state = $testEnv->getState();
+        $state = $testEnv->getState();
 
-		$this->databaseName = $state->database;
-		$this->testSessionEnvironment = $testEnv;
+        $this->databaseName = $state->database;
+        $this->testSessionEnvironment = $testEnv;
 
-		file_put_contents('php://stdout', "Temp Database: $this->databaseName" . PHP_EOL . PHP_EOL);
+        file_put_contents('php://stdout', "Temp Database: $this->databaseName" . PHP_EOL . PHP_EOL);
 
         register_shutdown_function(array($this, '__destruct'));
     }
@@ -95,7 +97,7 @@ class SilverStripeAwareInitializer implements ContextInitializer
     {
         // Add condition here as register_shutdown_function() also calls this in __construct()
         if ($this->testSessionEnvironment) {
-        file_put_contents('php://stdout', "Killing test session environment...");
+            file_put_contents('php://stdout', "Killing test session environment...");
             $this->testSessionEnvironment->endTestSession();
             $this->testSessionEnvironment = null;
             file_put_contents('php://stdout', " done!" . PHP_EOL);
@@ -120,6 +122,9 @@ class SilverStripeAwareInitializer implements ContextInitializer
      */
     public function initializeContext(Context $context)
     {
+        if (! $context instanceof SilverStripeAwareContext) {
+            return;
+        }
         $context->setDatabase($this->databaseName);
         $context->setAjaxSteps($this->ajaxSteps);
         $context->setAjaxTimeout($this->ajaxTimeout);
@@ -133,7 +138,7 @@ class SilverStripeAwareInitializer implements ContextInitializer
     {
         if ($ajaxSteps) {
             $this->ajaxSteps = $ajaxSteps;
-    }
+        }
     }
 
     public function getAjaxSteps()
