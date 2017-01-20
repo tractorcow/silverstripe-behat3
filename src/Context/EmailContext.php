@@ -2,20 +2,15 @@
 
 namespace SilverStripe\BehatExtension\Context;
 
-use Behat\Behat\Context\BehatContext;
 use Behat\Behat\Context\Context;
-use Behat\Behat\Context\Step;
-use Behat\Behat\Event\ScenarioEvent;
+use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Gherkin\Node\TableNode;
 use Behat\Mink\Session;
 use SilverStripe\BehatExtension\Utility\TestMailer;
 use SilverStripe\Control\Email\Email;
-use SilverStripe\Core\Config\Config;
+use SilverStripe\Control\Email\Mailer;
 use SilverStripe\Core\Injector\Injector;
 use Symfony\Component\DomCrawler\Crawler;
-
-// PHPUnit
-require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions.php';
 
 /**
  * Context used to define steps related to email sending.
@@ -61,18 +56,22 @@ class EmailContext implements Context
 
     /**
      * @BeforeScenario
+     * @param BeforeScenarioScope $event
      */
-    public function before(ScenarioEvent $event)
+    public function before(BeforeScenarioScope $event)
     {
         // Also set through the 'supportbehat' extension
         // to ensure its available both in CLI execution and the tested browser session
         $this->mailer = new TestMailer();
-        Injector::inst()->registerService($this->mailer, 'SilverStripe\\Control\\Email\\Mailer');
+        Injector::inst()->registerService($this->mailer, Mailer::class);
         Email::config()->update("send_all_emails_to", null);
     }
 
     /**
      * @Given /^there should (not |)be an email (to|from) "([^"]*)"$/
+     * @param string $negate
+     * @param string $direction
+     * @param string $email
      */
     public function thereIsAnEmailFromTo($negate, $direction, $email)
     {
@@ -89,6 +88,10 @@ class EmailContext implements Context
 
     /**
      * @Given /^there should (not |)be an email (to|from) "([^"]*)" titled "([^"]*)"$/
+     * @param string $negate
+     * @param string $direction
+     * @param string $email
+     * @param string $subject
      */
     public function thereIsAnEmailFromToTitled($negate, $direction, $email, $subject)
     {
@@ -122,6 +125,8 @@ class EmailContext implements Context
      * e.g. through 'Given there should be an email to "test@test.com"'.
      *
      * @Given /^the email should (not |)contain "([^"]*)"$/
+     * @param string $negate
+     * @param string $content
      */
     public function thereTheEmailContains($negate, $content)
     {
@@ -151,6 +156,7 @@ class EmailContext implements Context
      * e.g. through 'Given there should be an email to "test@test.com"'.
      *
      * @Given /^the email should contain plain text "([^"]*)"$/
+     * @param string $content
      */
     public function thereTheEmailContainsPlainText($content)
     {
@@ -168,6 +174,9 @@ class EmailContext implements Context
 
     /**
      * @When /^I click on the "([^"]*)" link in the email (to|from) "([^"]*)"$/
+     * @param string $linkSelector
+     * @param string $direction
+     * @param string $email
      */
     public function iGoToInTheEmailTo($linkSelector, $direction, $email)
     {
@@ -182,11 +191,15 @@ class EmailContext implements Context
         $link = $linkEl->attr('href');
         assertNotNull($link);
 
-        return new Step\When(sprintf('I go to "%s"', $link));
+        $this->getMainContext()->visit($link);
     }
 
     /**
      * @When /^I click on the "([^"]*)" link in the email (to|from) "([^"]*)" titled "([^"]*)"$/
+     * @param string $linkSelector
+     * @param string $direction
+     * @param string $email
+     * @param string $title
      */
     public function iGoToInTheEmailToTitled($linkSelector, $direction, $email, $title)
     {
@@ -200,7 +213,7 @@ class EmailContext implements Context
         assertNotNull($linkEl);
         $link = $linkEl->attr('href');
         assertNotNull($link);
-        return new Step\When(sprintf('I go to "%s"', $link));
+        $this->getMainContext()->visit($link);
     }
 
     /**
@@ -208,6 +221,7 @@ class EmailContext implements Context
      * e.g. through 'Given there should be an email to "test@test.com"'.
      *
      * @When /^I click on the "([^"]*)" link in the email"$/
+     * @param string $linkSelector
      */
     public function iGoToInTheEmail($linkSelector)
     {
@@ -222,7 +236,7 @@ class EmailContext implements Context
         $link = $linkEl->attr('href');
         assertNotNull($link);
 
-        return new Step\When(sprintf('I go to "%s"', $link));
+        $this->getMainContext()->visit($link);
     }
 
     /**
@@ -231,7 +245,7 @@ class EmailContext implements Context
     public function iClearAllEmails()
     {
         $this->lastMatchedEmail = null;
-        return $this->mailer->clearEmails();
+        $this->mailer->clearEmails();
     }
 
     /**
@@ -240,6 +254,8 @@ class EmailContext implements Context
      * | row2 |
      * Assumes an email has been identified by a previous step.
      * @Then /^the email should (not |)contain the following data:$/
+     * @param string $negate
+     * @param TableNode $table
      */
     public function theEmailContainFollowingData($negate, TableNode $table)
     {
@@ -273,6 +289,8 @@ class EmailContext implements Context
 
     /**
      * @Then /^there should (not |)be an email titled "([^"]*)"$/
+     * @param string $negate
+     * @param string $subject
      */
     public function thereIsAnEmailTitled($negate, $subject)
     {
@@ -291,6 +309,8 @@ class EmailContext implements Context
 
     /**
      * @Then /^the email should (not |)be sent from "([^"]*)"$/
+     * @param string $negate
+     * @param string $from
      */
     public function theEmailSentFrom($negate, $from)
     {
@@ -308,6 +328,8 @@ class EmailContext implements Context
 
     /**
      * @Then /^the email should (not |)be sent to "([^"]*)"$/
+     * @param string $negate
+     * @param string $to
      */
     public function theEmailSentTo($negate, $to)
     {
@@ -328,6 +350,7 @@ class EmailContext implements Context
      * e.g. http://localhost/Security/changepassword?m=199&title=reset
      * Example: When I click on the http link "changepassword" in the email
      * @When /^I click on the http link "([^"]*)" in the email$/
+     * @param string $httpText
      */
     public function iClickOnHttpLinkInEmail($httpText)
     {
@@ -351,6 +374,6 @@ class EmailContext implements Context
         }
         assertNotNull($href);
 
-        return new Step\When(sprintf('I go to "%s"', $href));
+        $this->getMainContext()->visit($href);
     }
 }

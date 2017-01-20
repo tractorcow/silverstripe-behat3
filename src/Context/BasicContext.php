@@ -759,9 +759,9 @@ JS;
      *
      * @Then /^the "(?P<name>(?:[^"]|\\")*)" (?P<type>(?:(field|button))) should (?P<negate>(?:(not |)))be disabled/
      * @Then /^the (?P<type>(?:(field|button))) "(?P<name>(?:[^"]|\\")*)" should (?P<negate>(?:(not |)))be disabled/
-     * @param $name
-     * @param $type
-     * @param $negate
+     * @param string $name
+     * @param string $type
+     * @param string $negate
      */
     public function stepFieldShouldBeDisabled($name, $type, $negate)
     {
@@ -792,7 +792,7 @@ JS;
      *
      * @Then /^the "(?P<field>(?:[^"]|\\")*)" field should be enabled/
      * @Then /^the field "(?P<field>(?:[^"]|\\")*)" should be enabled/
-     * @param $field
+     * @param string $field
      */
     public function stepFieldShouldBeEnabled($field)
     {
@@ -813,8 +813,8 @@ JS;
      * Example: Given I follow "Select" in the "My Login Form" region
      *
      * @Given /^I (?:follow|click) "(?P<link>[^"]*)" in the "(?P<region>[^"]*)" region$/
-     * @param $link
-     * @param $region
+     * @param string $link
+     * @param string $region
      * @throws \Exception
      */
     public function iFollowInTheRegion($link, $region)
@@ -838,9 +838,9 @@ JS;
      * Example: Given I fill in "Hello" with "World"
      *
      * @Given /^I fill in "(?P<field>[^"]*)" with "(?P<value>[^"]*)" in the "(?P<region>[^"]*)" region$/
-     * @param $field
-     * @param $value
-     * @param $region
+     * @param string $field
+     * @param string $value
+     * @param string $region
      * @throws \Exception
      */
     public function iFillinTheRegion($field, $value, $region)
@@ -868,9 +868,9 @@ JS;
      * Example: Given I should not see "My Text" in the "My Login Form" region
      *
      * @Given /^I should (?P<negate>(?:(not |)))see "(?P<text>[^"]*)" in the "(?P<region>[^"]*)" region$/
-     * @param $negate
-     * @param $text
-     * @param $region
+     * @param string $negate
+     * @param string $text
+     * @param string $region
      * @throws \Exception
      */
     public function iSeeTextInRegion($negate, $text, $region)
@@ -912,7 +912,7 @@ JS;
      * Selects the specified radio button
      *
      * @Given /^I select the "([^"]*)" radio button$/
-     * @param $radioLabel
+     * @param string $radioLabel
      */
     public function iSelectTheRadioButton($radioLabel)
     {
@@ -927,8 +927,8 @@ JS;
 
     /**
      * @Then /^the "([^"]*)" table should contain "([^"]*)"$/
-     * @param $selector
-     * @param $text
+     * @param string $selector
+     * @param string $text
      */
     public function theTableShouldContain($selector, $text)
     {
@@ -940,8 +940,8 @@ JS;
 
     /**
      * @Then /^the "([^"]*)" table should not contain "([^"]*)"$/
-     * @param $selector
-     * @param $text
+     * @param string $selector
+     * @param string $text
      */
     public function theTableShouldNotContain($selector, $text)
     {
@@ -953,8 +953,8 @@ JS;
 
     /**
      * @Given /^I click on "([^"]*)" in the "([^"]*)" table$/
-     * @param $text
-     * @param $selector
+     * @param string $text
+     * @param string $selector
      */
     public function iClickOnInTheTable($text, $selector)
     {
@@ -973,7 +973,7 @@ JS;
      * - fieldset[data-name] table
      * - table caption
      *
-     * @param $selector
+     * @param string $selector
      * @return NodeElement
      */
     protected function getTable($selector)
@@ -1018,10 +1018,10 @@ JS;
      * Checks the order of two texts.
      * Assumptions: the two texts appear in their conjunct parent element once
      * @Then /^I should see the text "(?P<textBefore>(?:[^"]|\\")*)" (before|after) the text "(?P<textAfter>(?:[^"]|\\")*)" in the "(?P<element>[^"]*)" element$/
-     * @param $textBefore
-     * @param $order
-     * @param $textAfter
-     * @param $element
+     * @param string $textBefore
+     * @param string $order
+     * @param string $textAfter
+     * @param string $element
      */
     public function theTextBeforeAfter($textBefore, $order, $textAfter, $element)
     {
@@ -1049,7 +1049,7 @@ JS;
      *
      * @Given /^I wait for (\d+) seconds until I see the "([^"]*)" element$/
      * @param int $wait
-     * @param $selector
+     * @param string $selector
      */
     public function iWaitXUntilISee($wait, $selector)
     {
@@ -1073,7 +1073,7 @@ JS;
      * Example: Given I wait until I see the "header .login-form" element
      *
      * @Given /^I wait until I see the "([^"]*)" element$/
-     * @param $selector
+     * @param string $selector
      */
     public function iWaitUntilISee($selector)
     {
@@ -1095,7 +1095,7 @@ JS;
      * Example: Given I wait until I see the text "Welcome back, John!"
      *
      * @Given /^I wait until I see the text "([^"]*)"$/
-     * @param $text
+     * @param string $text
      */
     public function iWaitUntilISeeText($text)
     {
@@ -1140,8 +1140,8 @@ JS;
      * Example: Given I scroll to the "My Date" field
      *
      * @Given /^I scroll to the "([^"]*)" (field|link|button)$/
-     * @param $locator
-     * @param $type
+     * @param string $locator
+     * @param string $type
      */
     public function iScrollToField($locator, $type)
     {
@@ -1165,7 +1165,7 @@ JS;
      * Example: Given I scroll to the ".css_element" element
      *
      * @Given /^I scroll to the "(?P<locator>(?:[^"]|\\")*)" element$/
-     * @param $locator
+     * @param string $locator
      */
     public function iScrollToElement($locator)
     {

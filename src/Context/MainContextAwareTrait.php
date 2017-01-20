@@ -3,7 +3,6 @@
 
 namespace SilverStripe\BehatExtension\Context;
 
-use Behat\Behat\Context\Context;
 use Behat\Behat\Context\Environment\InitializedContextEnvironment;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 

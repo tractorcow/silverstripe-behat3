@@ -11,7 +11,6 @@ namespace SilverStripe\BehatExtension\Context;
  * with this source code in the file LICENSE.
  */
 
-use Behat\Mink\Session;
 use Behat\MinkExtension\Context\MinkAwareContext;
 
 /**
