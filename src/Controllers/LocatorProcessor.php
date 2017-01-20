@@ -1,19 +1,19 @@
 <?php
 
-namespace SilverStripe\BehatExtension\Console\Processor;
+namespace SilverStripe\BehatExtension\Controllers;
 
 use SilverStripe\Core\Manifest\ModuleLoader;
+use Behat\Testwork\Cli\Controller;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Behat\Behat\Console\Processor\LocatorProcessor as BaseProcessor;
 
 /**
  * Path locator processor.
  */
-class LocatorProcessor extends BaseProcessor
+class LocatorProcessor implements Controller
 {
     private $container;
 
@@ -50,10 +50,11 @@ class LocatorProcessor extends BaseProcessor
      *
      * @param InputInterface  $input
      * @param OutputInterface $output
+     * @return null|integer
      *
      * @throws \RuntimeException
      */
-    public function process(InputInterface $input, OutputInterface $output)
+    public function execute(InputInterface $input, OutputInterface $output)
     {
         $featuresPath = $input->getArgument('features');
         
@@ -65,6 +66,7 @@ class LocatorProcessor extends BaseProcessor
         $currentModuleName = $this->container->getParameter('behat.silverstripe_extension.module');
 
         // get module from short notation if path starts from @
+        $currentModulePath = null;
         if ($featuresPath && preg_match('/^\@([^\/\\\\]+)(.*)$/', $featuresPath, $matches)) {
             $currentModuleName = $matches[1];
             // TODO Replace with proper module loader once AJShort's changes are merged into core
@@ -121,5 +123,6 @@ class LocatorProcessor extends BaseProcessor
         $this->container
             ->get('behat.console.command')
             ->setFeaturesPaths($featuresPath ? array($featuresPath) : array());
+        return null;
     }
 }

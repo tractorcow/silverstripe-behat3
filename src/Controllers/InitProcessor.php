@@ -1,21 +1,21 @@
 <?php
 
-namespace SilverStripe\BehatExtension\Console\Processor;
+namespace SilverStripe\BehatExtension\Controllers;
 
 use SilverStripe\Core\Manifest\Module;
 use SilverStripe\Core\Manifest\ModuleLoader;
+use Behat\Testwork\Cli\Controller;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Behat\Behat\Console\Processor\InitProcessor as BaseProcessor;
 use SilverStripe\Core\Manifest\ClassLoader;
 
 /**
  * Initializes a project for Behat usage, creating context files.
  */
-class InitProcessor extends BaseProcessor
+class InitProcessor implements Controller
 {
     private $container;
 
@@ -32,8 +32,6 @@ class InitProcessor extends BaseProcessor
      */
     public function configure(Command $command)
     {
-        parent::configure($command);
-        
         $command->addOption(
             '--namespace',
             null,
@@ -42,7 +40,7 @@ class InitProcessor extends BaseProcessor
         );
     }
 
-    public function process(InputInterface $input, OutputInterface $output)
+    public function execute(InputInterface $input, OutputInterface $output)
     {
         // throw exception if no features argument provided
         if (!$input->getArgument('features') && $input->getOption('init')) {
@@ -66,13 +64,14 @@ class InitProcessor extends BaseProcessor
     protected function initBundleDirectoryStructure(InputInterface $input, OutputInterface $output)
     {
         // Bootstrap SS so we can use module listing
+        // note: Don't remove unused $frameworkPath variable, as it's used within Core/Core.php
         $frameworkPath = $this->container->getParameter('behat.silverstripe_extension.framework_path');
         $_GET['flush'] = 1;
         require_once('Core/Core.php');
         unset($_GET['flush']);
 
         $featuresPath = $input->getArgument('features');
-        if(!$featuresPath) {
+        if (!$featuresPath) {
             throw new \InvalidArgumentException('Please specify a module name (e.g. "@mymodule")');
         }
 
@@ -86,7 +85,7 @@ class InitProcessor extends BaseProcessor
             }
         if (!$currentModuleName) {
             throw new \InvalidArgumentException('Can not find module to initialize suite.');
-        } 
+        }
 
         // Get path for module
         $module = ModuleLoader::instance()->getManifest()->getModule($currentModuleName);
@@ -96,14 +95,14 @@ class InitProcessor extends BaseProcessor
         $currentModulePath = $module->getPath();
 
         // TODO Retrieve from module definition once that's implemented
-        if($input->getOption('namespace')) {
+        if ($input->getOption('namespace')) {
             $namespace = $input->getOption('namespace');
         } else {
             $namespace = ucfirst($currentModuleName);
         }
         $namespace .= '\\' . $this->container->getParameter('behat.silverstripe_extension.context.namespace_suffix');
 
-        $featuresPath = rtrim($currentModulePath.DIRECTORY_SEPARATOR.$pathSuffix,DIRECTORY_SEPARATOR);
+        $featuresPath = rtrim($currentModulePath.DIRECTORY_SEPARATOR.$pathSuffix, DIRECTORY_SEPARATOR);
         $basePath     = $this->container->getParameter('paths.base').DIRECTORY_SEPARATOR;
         $bootstrapPath = $featuresPath.DIRECTORY_SEPARATOR.'bootstrap';
         $contextPath  = $bootstrapPath.DIRECTORY_SEPARATOR.'Context';
@@ -142,7 +141,7 @@ class InitProcessor extends BaseProcessor
      */
     protected function getFeatureContextSkelet()
     {
-return <<<'PHP'
+        return <<<'PHP'
 <?php
 
 namespace %NAMESPACE%;

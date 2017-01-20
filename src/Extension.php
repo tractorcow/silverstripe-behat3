@@ -8,6 +8,7 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Behat\Testwork\ServiceContainer\ExtensionManager;
 use Behat\Testwork\ServiceContainer\Extension as ExtensionInterface;
+use Symfony\Component\DependencyInjection\Definition;
 
 /*
  * This file is part of the SilverStripe\BehatExtension
@@ -65,18 +66,18 @@ class Extension implements ExtensionInterface
             throw new \InvalidArgumentException('Path specified as `framework_path` either doesn\'t exist or is not a directory');
         }
 
-        $container->setParameter('behat.silverstripe_extension.framework_path', $config['framework_path']);
-        $container->setParameter('behat.silverstripe_extension.admin_url', $config['admin_url']);
-        $container->setParameter('behat.silverstripe_extension.login_url', $config['login_url']);
-        $container->setParameter('behat.silverstripe_extension.screenshot_path', $config['screenshot_path']);
-        $container->setParameter('behat.silverstripe_extension.ajax_timeout', $config['ajax_timeout']);
+        $container->setParameter('silverstripe_extension.framework_path', $config['framework_path']);
+        $container->setParameter('silverstripe_extension.admin_url', $config['admin_url']);
+        $container->setParameter('silverstripe_extension.login_url', $config['login_url']);
+        $container->setParameter('silverstripe_extension.screenshot_path', $config['screenshot_path']);
+        $container->setParameter('silverstripe_extension.ajax_timeout', $config['ajax_timeout']);
         if (isset($config['ajax_steps'])) {
-            $container->setParameter('behat.silverstripe_extension.ajax_steps', $config['ajax_steps']);
+            $container->setParameter('silverstripe_extension.ajax_steps', $config['ajax_steps']);
         }
         if (isset($config['region_map'])) {
-             $container->setParameter('behat.silverstripe_extension.region_map', $config['region_map']);
+             $container->setParameter('silverstripe_extension.region_map', $config['region_map']);
         }
-        $container->setParameter('behat.silverstripe_extension.bootstrap_file', $config['bootstrap_file']);
+        $container->setParameter('silverstripe_extension.bootstrap_file', $config['bootstrap_file']);
     }
 
     /**
