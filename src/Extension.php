@@ -52,7 +52,10 @@ class Extension implements ExtensionInterface
             throw new \InvalidArgumentException('Specify `framework_path` parameter for silverstripe_extension');
         }
 
-        $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../../../config/services'));
+        // TODO: Rewrite init classes `console.processor.*.class` to the service names below
+        // var_dump(array_keys($container->getDefinitions()));
+
+        $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../config'));
         $loader->load('silverstripe.yml');
 
         $behatBasePath = $container->getParameter('paths.base');
