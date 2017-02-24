@@ -615,6 +615,8 @@ class FixtureContext extends BehatContext
         if (!$data) {
             $data = array();
         }
+
+
         $relativeTargetPath = (isset($data['Filename'])) ? $data['Filename'] : $identifier;
         $relativeTargetPath = preg_replace('/^' . ASSETS_DIR . '\/?/', '', $relativeTargetPath);
         $sourcePath = $this->joinPaths($this->getFilesPath(), basename($relativeTargetPath));
@@ -624,7 +626,7 @@ class FixtureContext extends BehatContext
             $parent = Folder::find_or_make($relativeTargetPath);
             $data['ID'] = $parent->ID;
         } else {
-            $parent = Folder::find_or_make(dirname($relativeTargetPath));
+            // Check file exists
             if (!file_exists($sourcePath)) {
                 throw new \InvalidArgumentException(sprintf(
                     'Source file for "%s" cannot be found in "%s"',
@@ -632,7 +634,17 @@ class FixtureContext extends BehatContext
                     $sourcePath
                 ));
             }
-            $data['ParentID'] = $parent->ID;
+
+            // Get parent
+            $parentID = 0;
+            if (strstr($relativeTargetPath, '/')) {
+                $folderName = dirname($relativeTargetPath);
+                $parent = Folder::find_or_make($folderName);
+                if ($parent) {
+                    $parentID = $parent->ID;
+                }
+            }
+            $data['ParentID'] = $parentID;
 
             // Load file into APL and retrieve tuple
             $asset = $this->getAssetStore()->setFromLocalFile(
