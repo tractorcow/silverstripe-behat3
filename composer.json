@@ -25,7 +25,7 @@
 		"behat/mink-selenium2-driver": "~1.2.0",
 		"symfony/dom-crawler": "~2.0",
 		"silverstripe/testsession": "^2.0.0-alpha2",
-		"silverstripe/framework": "^4.0.0-alpha2"
+		"silverstripe/framework": "^4.0.0@dev"
 	},
 
 	"autoload": {
