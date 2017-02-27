@@ -6,6 +6,7 @@ use Behat\Behat\Context\Initializer\InitializerInterface;
 use Behat\Behat\Context\ContextInterface;
 use SilverStripe\BehatExtension\Context\SilverStripeAwareContextInterface;
 use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Dev\SapphireTest;
 
 /*
  * This file is part of the Behat/SilverStripeExtension
@@ -58,18 +59,18 @@ class SilverStripeAwareInitializer implements InitializerInterface
     protected $testSessionEnvironment;
 
     /**
-     * @var string PHP file to included before loading Core.php
-     */
-    protected $bootstrapFile;
-
-    /**
      * Initializes initializer.
      *
      * @param string $frameworkPath
      */
-    public function __construct($frameworkPath, $bootstrapFile = null)
+    public function __construct($frameworkPath)
     {
-        $this->bootstrap($frameworkPath, $bootstrapFile);
+        file_put_contents('php://stdout', 'Bootstrapping' . PHP_EOL);
+
+        SapphireTest::start();
+
+        // Remove the error handler so that PHPUnit can add its own
+        restore_error_handler();
 
         file_put_contents('php://stdout', "Creating test session environment" . PHP_EOL);
 
@@ -187,26 +188,5 @@ class SilverStripeAwareInitializer implements InitializerInterface
     public function setRegionMap($regionMap)
     {
         $this->regionMap = $regionMap;
-    }
-
-    /**
-     * @param string $frameworkPath Absolute path to 'framework' module
-     */
-    protected function bootstrap($frameworkPath, $bootstrapFile = null)
-    {
-        file_put_contents('php://stdout', 'Bootstrapping' . PHP_EOL);
-
-        // Require a bootstrap file, if provided
-        if ($bootstrapFile) {
-            require_once($bootstrapFile);
-        }
-
-        // Connect to database and build manifest
-        $_GET['flush'] = 1;
-        require_once('Core/Core.php');
-        unset($_GET['flush']);
-
-        // Remove the error handler so that PHPUnit can add its own
-        restore_error_handler();
     }
 }

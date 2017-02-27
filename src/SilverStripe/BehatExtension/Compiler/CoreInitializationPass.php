@@ -22,7 +22,11 @@ class CoreInitializationPass implements CompilerPassInterface
         $_GET['flush'] = 1;
         require_once('Core/Core.php');
 
-        SapphireTest::use_test_manifest();
+        // Include bootstrap file
+        $bootstrapFile = $container->getParameter('behat.silverstripe_extension.bootstrap_file');
+        if ($bootstrapFile) {
+            require_once $bootstrapFile;
+        }
 
         unset($_GET['flush']);
 
