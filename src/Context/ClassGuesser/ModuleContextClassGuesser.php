@@ -47,6 +47,13 @@ class ModuleContextClassGuesser implements ClassGuesserInterface
      */
     public function guess()
     {
+        // todo: Instead of guessing class:
+        // - go to $this->namespaceBase ./tests/behat directory.
+        // - find first FeatureContext.php file (recursive depth first search)
+        // - parse classname from it (use ClassManifest::handleFile logic)
+        // - get the real name instead of guessing!
+
+
         // Try fully qualified namespace
         if (class_exists($class = $this->namespaceBase.'\\'.$this->namespaceSuffix.'\\'.$this->contextClass)) {
             return $class;

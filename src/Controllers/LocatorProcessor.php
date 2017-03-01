@@ -57,7 +57,9 @@ class LocatorProcessor implements Controller
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $featuresPath = $input->getArgument('features');
-        
+        throw new \Exception("todo : Implement " . $featuresPath);
+        var_dump($featuresPath); die;
+
         // Can't use 'paths.base' since that's locked at this point to base folder (not module)
         $pathSuffix   = $this->container->getParameter('behat.silverstripe_extension.context.path_suffix');
 
@@ -120,9 +122,13 @@ class LocatorProcessor implements Controller
                 ->setNamespaceBase($namespace);
         }
 
-        $this->container
-            ->get('behat.console.command')
-            ->setFeaturesPaths($featuresPath ? array($featuresPath) : array());
+        // todo: Probably what we want to do is get the default suite from
+        // SuiteRegistry, and add this context to it
+
+        /** @var \Behat\Behat\Console\Command\BehatCommand $command */
+        $command = $this->container
+            ->get('behat.console.command');
+        $command->setFeaturesPaths($featuresPath ? array($featuresPath) : array());
         return null;
     }
 }

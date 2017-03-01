@@ -2,6 +2,10 @@
 
 namespace SilverStripe\BehatExtension;
 
+use Behat\Testwork\Cli\ServiceContainer\CliExtension;
+use Behat\Testwork\Suite\ServiceContainer\SuiteExtension;
+use SilverStripe\BehatExtension\Controllers\InitProcessor;
+use SilverStripe\BehatExtension\Controllers\LocatorProcessor;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
@@ -9,6 +13,7 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Behat\Testwork\ServiceContainer\ExtensionManager;
 use Behat\Testwork\ServiceContainer\Extension as ExtensionInterface;
 use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
 
 /*
  * This file is part of the SilverStripe\BehatExtension
@@ -52,12 +57,19 @@ class Extension implements ExtensionInterface
             throw new \InvalidArgumentException('Specify `framework_path` parameter for silverstripe_extension');
         }
 
-        // TODO: Rewrite init classes `console.processor.*.class` to the service names below
-        // var_dump(array_keys($container->getDefinitions()));
-
+        // Load yml config
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../config'));
         $loader->load('silverstripe.yml');
 
+        // @todo - Make behat3 init processor?
+
+        // Add new locator processor
+        // This provides old behat 2 style bootstrapping for behat 3
+        $definition = new Definition(LocatorProcessor::class, [ $container ]);
+        $definition->addTag(CliExtension::CONTROLLER_TAG, [ 'priority' => 9999 ]);
+        $container->setDefinition(CliExtension::CONTROLLER_TAG . '.sslocator', $definition);
+
+        // Set various paths
         $behatBasePath = $container->getParameter('paths.base');
         $config['framework_path'] = realpath(sprintf(
             '%s%s%s',

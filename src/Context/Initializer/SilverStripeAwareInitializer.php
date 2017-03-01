@@ -4,7 +4,6 @@ namespace SilverStripe\BehatExtension\Context\Initializer;
 
 use Behat\Behat\Context\Initializer\ContextInitializer;
 use Behat\Behat\Context\Context;
-
 use SilverStripe\BehatExtension\Context\SilverStripeAwareContext;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
@@ -65,7 +64,6 @@ class SilverStripeAwareInitializer implements ContextInitializer
      * Initializes initializer.
      *
      * @param string $frameworkPath
-     * @param string $bootstrapFile
      */
     public function __construct($frameworkPath)
     {

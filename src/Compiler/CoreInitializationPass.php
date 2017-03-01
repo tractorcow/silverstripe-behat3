@@ -2,7 +2,6 @@
 
 namespace SilverStripe\BehatExtension\Compiler;
 
-use SilverStripe\Dev\SapphireTest;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 
@@ -26,7 +25,7 @@ class CoreInitializationPass implements CompilerPassInterface
         require_once('Core/Core.php');
 
         // Include bootstrap file
-        $bootstrapFile = $container->getParameter('behat.silverstripe_extension.bootstrap_file');
+        $bootstrapFile = $container->getParameter('silverstripe_extension.bootstrap_file');
         if ($bootstrapFile) {
             require_once $bootstrapFile;
         }
