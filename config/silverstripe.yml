@@ -7,7 +7,6 @@ parameters:
 # Custom init processory temporarily removed
 #  console.processor.init.class: SilverStripe\BehatExtension\Controllers\InitProcessor
   silverstripe_extension.context.namespace_suffix: Test\Behaviour
-  silverstripe_extension.framework_path: framework
   silverstripe_extension.ajax_steps: ~
   silverstripe_extension.ajax_timeout: ~
   silverstripe_extension.admin_url: ~
@@ -19,8 +18,6 @@ parameters:
 services:
   silverstripe_extension.context.initializer:
     class: %silverstripe_extension.context.initializer.class%
-    arguments:
-      - %silverstripe_extension.framework_path%
     calls:
       - [setAjaxSteps, [%silverstripe_extension.ajax_steps%]]
       - [setAjaxTimeout, [%silverstripe_extension.ajax_timeout%]]

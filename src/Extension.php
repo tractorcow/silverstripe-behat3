@@ -5,7 +5,7 @@ namespace SilverStripe\BehatExtension;
 use Behat\Testwork\Cli\ServiceContainer\CliExtension;
 use Behat\Testwork\Suite\ServiceContainer\SuiteExtension;
 use SilverStripe\BehatExtension\Controllers\InitProcessor;
-use SilverStripe\BehatExtension\Controllers\LocatorProcessor;
+use SilverStripe\BehatExtension\Controllers\ModuleSuiteLocator;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
@@ -53,10 +53,6 @@ class Extension implements ExtensionInterface
 
     public function load(ContainerBuilder $container, array $config)
     {
-        if (!isset($config['framework_path'])) {
-            throw new \InvalidArgumentException('Specify `framework_path` parameter for silverstripe_extension');
-        }
-
         // Load yml config
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../config'));
         $loader->load('silverstripe.yml');
@@ -65,23 +61,14 @@ class Extension implements ExtensionInterface
 
         // Add new locator processor
         // This provides old behat 2 style bootstrapping for behat 3
-        $definition = new Definition(LocatorProcessor::class, [ $container ]);
+        $definition = new Definition(ModuleSuiteLocator::class, [
+            $container,
+            new Reference(SuiteExtension::REGISTRY_ID)
+        ]);
         $definition->addTag(CliExtension::CONTROLLER_TAG, [ 'priority' => 9999 ]);
         $container->setDefinition(CliExtension::CONTROLLER_TAG . '.sslocator', $definition);
 
         // Set various paths
-        $behatBasePath = $container->getParameter('paths.base');
-        $config['framework_path'] = realpath(sprintf(
-            '%s%s%s',
-            rtrim($behatBasePath, DIRECTORY_SEPARATOR),
-            DIRECTORY_SEPARATOR,
-            ltrim($config['framework_path'], DIRECTORY_SEPARATOR)
-        ));
-        if (!file_exists($config['framework_path']) || !is_dir($config['framework_path'])) {
-            throw new \InvalidArgumentException('Path specified as `framework_path` either doesn\'t exist or is not a directory');
-        }
-
-        $container->setParameter('silverstripe_extension.framework_path', $config['framework_path']);
         $container->setParameter('silverstripe_extension.admin_url', $config['admin_url']);
         $container->setParameter('silverstripe_extension.login_url', $config['login_url']);
         $container->setParameter('silverstripe_extension.screenshot_path', $config['screenshot_path']);
@@ -108,9 +95,6 @@ class Extension implements ExtensionInterface
     {
         $builder->
             children()->
-                scalarNode('framework_path')->
-                    defaultValue('framework')->
-                end()->
                 scalarNode('screenshot_path')->
                     defaultNull()->
                 end()->

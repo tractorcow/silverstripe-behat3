@@ -62,10 +62,8 @@ class SilverStripeAwareInitializer implements ContextInitializer
 
     /**
      * Initializes initializer.
-     *
-     * @param string $frameworkPath
      */
-    public function __construct($frameworkPath)
+    public function __construct()
     {
         file_put_contents('php://stdout', 'Bootstrapping' . PHP_EOL);
 
