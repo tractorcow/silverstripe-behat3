@@ -19,8 +19,6 @@ class EmailContext implements Context
 {
     use MainContextAwareTrait;
 
-    protected $context;
-
     /**
      * @var TestMailer
      */
@@ -30,18 +28,6 @@ class EmailContext implements Context
      * Stored to simplify later assertions
      */
     protected $lastMatchedEmail;
-
-    /**
-     * Initializes context.
-     * Every scenario gets it's own context object.
-     *
-     * @param array $parameters context parameters (set them up through behat.yml)
-     */
-    public function __construct(array $parameters)
-    {
-        // Initialize your context here
-        $this->context = $parameters;
-    }
 
     /**
      * Get Mink session from MinkContext

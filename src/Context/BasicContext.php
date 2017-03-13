@@ -34,13 +34,6 @@ class BasicContext implements Context
     use MainContextAwareTrait;
 
     /**
-     * Context arguments
-     *
-     * @var array
-     */
-    protected $context;
-
-    /**
      * Date format in date() syntax
      *
      * @var string
@@ -58,18 +51,6 @@ class BasicContext implements Context
      * @var String
      */
     protected $datetimeFormat = 'Y-m-d H:i:s';
-
-    /**
-     * Initializes context.
-     * Every scenario gets it's own context object.
-     *
-     * @param   array   $parameters     context parameters (set them up through behat.yml)
-     */
-    public function __construct(array $parameters)
-    {
-        // Initialize your context here
-        $this->context = $parameters;
-    }
 
     /**
      * Get Mink session from MinkContext

@@ -3,6 +3,7 @@
 namespace SilverStripe\BehatExtension\Controllers;
 
 use Behat\Testwork\Cli\Controller;
+use Behat\Testwork\ServiceContainer\ContainerLoader;
 use Behat\Testwork\Suite\Cli\SuiteController;
 use Behat\Testwork\Suite\ServiceContainer\SuiteExtension;
 use Behat\Testwork\Suite\SuiteRegistry;
@@ -10,6 +11,7 @@ use Exception;
 use InvalidArgumentException;
 use SilverStripe\Core\Manifest\Module;
 use SilverStripe\Core\Manifest\ModuleLoader;
+use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -25,7 +27,7 @@ use Symfony\Component\Yaml\Parser;
 class ModuleSuiteLocator implements Controller
 {
     /**
-     * @var ContainerInterface
+     * @var Container
      */
     private $container;
 
@@ -167,14 +169,18 @@ class ModuleSuiteLocator implements Controller
      */
     protected function loadSuiteConfiguration($suite, $path)
     {
-        $yamlParser = new Parser();
+        $contents = file_get_contents($path);
+        $yamlParser = new Parser(file_get_contents($path));
         $config = $yamlParser->parse(file_get_contents($path));
         if (empty($config['default']['suites'][$suite])) {
             throw new Exception("Path {$path} does not contain default.suites.{$suite} config");
         }
+        $suiteConfig = $config['default']['suites'][$suite];
+        // Resolve variables
+        $resolvedConfig = $this->container->getParameterBag()->resolveValue($suiteConfig);
         return [
             'type' => null, // @todo figure out what this is for
-            'settings' => $config['default']['suites'][$suite],
+            'settings' => $resolvedConfig,
         ];
     }
 }

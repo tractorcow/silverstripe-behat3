@@ -2,6 +2,7 @@
 
 namespace SilverStripe\BehatExtension\Context;
 
+use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Behat\Hook\Scope\BeforeStepScope;
 use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Selector\Xpath\Escaper;
@@ -56,8 +57,6 @@ abstract class SilverStripeContext extends MinkContext implements SilverStripeAw
      */
     protected $screenshotPath;
 
-    protected $context;
-
     protected $testSessionEnvironment;
 
     protected $regionMap;
@@ -75,14 +74,15 @@ abstract class SilverStripeContext extends MinkContext implements SilverStripeAw
      *
      * @param   array   $parameters     context parameters (set them up through behat.yml)
      */
-    public function __construct(array $parameters)
+    public function __construct(array $parameters = null)
     {
-        if (!preg_match('/^\\FeatureContext$/', get_class($this))) {
-            throw new InvalidArgumentException('Subclasses of SilverStripeContext must be named FeatureContext');
+        if (!preg_match('/\\FeatureContext$/', get_class($this))) {
+            throw new InvalidArgumentException(
+                'Subclasses of SilverStripeContext must be named FeatureContext. Found "' . get_class($this) . '""'
+            );
         }
 
         // Initialize your context here
-        $this->context = $parameters;
         $this->xpathEscaper = new Escaper();
         $this->testSessionEnvironment = new \TestSessionEnvironment();
     }
@@ -219,9 +219,9 @@ abstract class SilverStripeContext extends MinkContext implements SilverStripeAw
 
     /**
      * @BeforeScenario
-     * @param BeforeStepScope $event
+     * @param BeforeScenarioScope $event
      */
-    public function before(BeforeStepScope $event)
+    public function before(BeforeScenarioScope $event)
     {
         if (!isset($this->databaseName)) {
             throw new \LogicException(

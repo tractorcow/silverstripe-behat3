@@ -17,24 +17,10 @@ class LoginContext implements Context
 {
     use MainContextAwareTrait;
 
-    protected $context;
-
     /**
      * Cache for logInWithPermission()
      */
     protected $cache_generatedMembers = array();
-
-    /**
-     * Initializes context.
-     * Every scenario gets it's own context object.
-     *
-     * @param array $parameters context parameters (set them up through behat.yml)
-     */
-    public function __construct(array $parameters)
-    {
-        // Initialize your context here
-        $this->context = $parameters;
-    }
 
     /**
      * @Given /^I am logged in$/
