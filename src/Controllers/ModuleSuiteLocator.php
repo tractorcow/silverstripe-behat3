@@ -112,8 +112,7 @@ class ModuleSuiteLocator implements Controller
         }
 
         // Suite doesn't exist, so load dynamically from nested `behat.yml`
-        $moduleConfig = $this->findModuleConfig($module);
-        $config = $this->loadSuiteConfiguration($suiteName, $moduleConfig);
+        $config = $this->loadSuiteConfiguration($suiteName, $module);
         $this->registry->registerSuiteConfiguration(
             $suiteName,
             $config['type'],
@@ -162,15 +161,15 @@ class ModuleSuiteLocator implements Controller
     /**
      * Load configuration dynamically from yml
      *
-     * @param string $suite
-     * @param string $path
+     * @param string $suite Suite name
+     * @param Module $module
      * @return array
      * @throws Exception
      */
-    protected function loadSuiteConfiguration($suite, $path)
+    protected function loadSuiteConfiguration($suite, Module $module)
     {
-        $contents = file_get_contents($path);
-        $yamlParser = new Parser(file_get_contents($path));
+        $path = $this->findModuleConfig($module);
+        $yamlParser = new Parser();
         $config = $yamlParser->parse(file_get_contents($path));
         if (empty($config['default']['suites'][$suite])) {
             throw new Exception("Path {$path} does not contain default.suites.{$suite} config");
