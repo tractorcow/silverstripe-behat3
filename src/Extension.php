@@ -4,7 +4,6 @@ namespace SilverStripe\BehatExtension;
 
 use Behat\Testwork\Cli\ServiceContainer\CliExtension;
 use Behat\Testwork\Suite\ServiceContainer\SuiteExtension;
-use SilverStripe\BehatExtension\Controllers\InitProcessor;
 use SilverStripe\BehatExtension\Controllers\ModuleSuiteLocator;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -56,8 +55,6 @@ class Extension implements ExtensionInterface
         // Load yml config
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../config'));
         $loader->load('silverstripe.yml');
-
-        // @todo - Make behat3 init processor?
 
         // Add new locator processor
         // This provides old behat 2 style bootstrapping for behat 3

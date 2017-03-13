@@ -6,6 +6,8 @@ use Behat\Testwork\Cli\Controller;
 use Behat\Testwork\Suite\Cli\SuiteController;
 use Behat\Testwork\Suite\ServiceContainer\SuiteExtension;
 use Behat\Testwork\Suite\SuiteRegistry;
+use Exception;
+use InvalidArgumentException;
 use SilverStripe\Core\Manifest\Module;
 use SilverStripe\Core\Manifest\ModuleLoader;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -13,7 +15,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use SilverStripe\Core\Manifest\ClassLoader;
+use Symfony\Component\Yaml\Parser;
 
 /**
  * Locates test suite configuration based on module name.
@@ -74,15 +76,16 @@ class ModuleSuiteLocator implements Controller
     /**
      * Processes data from container and console input.
      *
-     * @param InputInterface  $input
+     * @param InputInterface $input
      * @param OutputInterface $output
      *
      * @throws \RuntimeException
+     * @return null
      */
     public function execute(InputInterface $input, OutputInterface $output)
     {
         if (!$input->hasArgument('module')) {
-            return;
+            return null;
         }
 
         // Get module
@@ -92,83 +95,42 @@ class ModuleSuiteLocator implements Controller
         }
         $module = $this->getModule($moduleName);
 
+        // Suite name always omits vendor
+        $suiteName = $module->getShortName();
+
         // If suite is already configured in the root, switch to it and return
-        if (isset($this->suiteConfigurations[$moduleName])) {
-            $config = $this->suiteConfigurations[$moduleName];
+        if (isset($this->suiteConfigurations[$suiteName])) {
+            $config = $this->suiteConfigurations[$suiteName];
             $this->registry->registerSuiteConfiguration(
-                $moduleName, $config['type'], $config['settings']
+                $suiteName,
+                $config['type'],
+                $config['settings']
             );
-            return;
+            return null;
         }
 
         // Suite doesn't exist, so load dynamically from nested `behat.yml`
         $moduleConfig = $this->findModuleConfig($module);
-        var_dump($moduleConfig);
-
-die;
-
-        // get module from short notation if path starts from @
-        $currentModulePath = null;
-        if ($module && preg_match('/^\@([^\/\\\\]+)(.*)$/', $module, $matches)) {
-            $currentModuleName = $matches[1];
-            // TODO Replace with proper module loader once AJShort's changes are merged into core
-            $currentModulePath = $modules[$currentModuleName];
-            $module = str_replace(
-                '@'.$currentModuleName,
-                $currentModulePath.DIRECTORY_SEPARATOR.$pathSuffix,
-                $module
-            );
-        // get module from provided features path
-        } elseif (!$currentModuleName && $module) {
-            $path = realpath(preg_replace('/\.feature\:.*$/', '.feature', $module));
-            foreach ($modules as $moduleName => $modulePath) {
-                if (false !== strpos($path, realpath($modulePath))) {
-                    $currentModuleName = $moduleName;
-                    $currentModulePath = realpath($modulePath);
-                    break;
-                }
-            }
-            $module = $currentModulePath.DIRECTORY_SEPARATOR.$pathSuffix.DIRECTORY_SEPARATOR.$module;
-        // if module is configured for profile and feature provided
-        } elseif ($currentModuleName && $module) {
-            $currentModulePath = $modules[$currentModuleName];
-            $module = $currentModulePath.DIRECTORY_SEPARATOR.$pathSuffix.DIRECTORY_SEPARATOR.$module;
-        }
-
-        if ($input->getOption('namespace')) {
-            $namespace = $input->getOption('namespace');
-        } else {
-            $namespace = ucfirst($currentModuleName);
-        }
-
-        if ($currentModuleName) {
-            $this->container
-                ->get('behat.silverstripe_extension.context.class_guesser')
-                // TODO Improve once modules can declare their own namespaces consistently
-                ->setNamespaceBase($namespace);
-        }
-
-        // todo: Probably what we want to do is get the default suite from
-        // SuiteRegistry, and add this context to it
-
-        /** @var \Behat\Behat\Console\Command\BehatCommand $command */
-        $command = $this->container
-            ->get('behat.console.command');
-        $command->setFeaturesPaths($module ? array($module) : array());
+        $config = $this->loadSuiteConfiguration($suiteName, $moduleConfig);
+        $this->registry->registerSuiteConfiguration(
+            $suiteName,
+            $config['type'],
+            $config['settings']
+        );
         return null;
     }
 
     /**
      * Find target module being tested
      *
-     * @param $input
+     * @param string $input
      * @return Module
      */
     protected function getModule($input)
     {
         $module = ModuleLoader::instance()->getManifest()->getModule($input);
         if (!$module) {
-            throw new \InvalidArgumentException("No module $input installed");
+            throw new InvalidArgumentException("No module $input installed");
         }
         return $module;
     }
@@ -195,30 +157,24 @@ die;
         throw new \InvalidArgumentException("No behat.yml found for module " . $module->getName());
     }
 
-
-
     /**
-     * {@inheritdoc}
+     * Load configuration dynamically from yml
+     *
+     * @param string $suite
+     * @param string $path
+     * @return array
+     * @throws Exception
      */
-    public function executeSuite(InputInterface $input, OutputInterface $output)
+    protected function loadSuiteConfiguration($suite, $path)
     {
-        $exerciseSuiteName = $input->getOption('suite');
-
-        if (null !== $exerciseSuiteName && !isset($this->suiteConfigurations[$exerciseSuiteName])) {
-            throw new SuiteNotFoundException(sprintf(
-                '`%s` suite is not found or has not been properly registered.',
-                $exerciseSuiteName
-            ), $exerciseSuiteName);
+        $yamlParser = new Parser();
+        $config = $yamlParser->parse(file_get_contents($path));
+        if (empty($config['default']['suites'][$suite])) {
+            throw new Exception("Path {$path} does not contain default.suites.{$suite} config");
         }
-
-        foreach ($this->suiteConfigurations as $name => $config) {
-            if (null !== $exerciseSuiteName && $exerciseSuiteName !== $name) {
-                continue;
-            }
-
-            $this->registry->registerSuiteConfiguration(
-                $name, $config['type'], $config['settings']
-            );
-        }
+        return [
+            'type' => null, // @todo figure out what this is for
+            'settings' => $config['default']['suites'][$suite],
+        ];
     }
 }
