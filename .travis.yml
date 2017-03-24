@@ -16,6 +16,7 @@ matrix:
       env: PHPUNIT_TEST=1
 
 before_script:
+  - composer validate
   - composer install --dev --prefer-dist
   - composer require silverstripe/config:1.0.x-dev silverstripe/framework:4.0.x-dev --prefer-dist
   - pyrus install pear/PHP_CodeSniffer
