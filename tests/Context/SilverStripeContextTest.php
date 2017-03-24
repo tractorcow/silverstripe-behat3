@@ -64,8 +64,8 @@ class SilverStripeContextTest extends \PHPUnit_Framework_TestCase
             ->getMock();
         $sessionMock = $this->getMockBuilder('Behat\Mink\Session')
             ->setConstructorArgs(array(
-                $this->getMock('Behat\Mink\Driver\DriverInterface'),
-                $this->getMock('Behat\Mink\Selector\SelectorsHandler')
+                $this->getMockBuilder('Behat\Mink\Driver\DriverInterface')->getMock(),
+                $this->getMockBuilder('Behat\Mink\Selector\SelectorsHandler')->getMock()
             ))
             ->setMethods(array('getPage'))
             ->getMock();
