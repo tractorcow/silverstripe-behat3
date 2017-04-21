@@ -11,6 +11,10 @@ use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Exception\UnsupportedDriverActionException;
 use Behat\Mink\Exception\ElementNotFoundException;
 use InvalidArgumentException;
+use SilverStripe\CMS\Model\SiteTree;
+use SilverStripe\Core\ClassInfo;
+use SilverStripe\Core\Flushable;
+use SilverStripe\ORM\DataObject;
 use SilverStripe\TestSession\TestSessionEnvironment;
 use Symfony\Component\CssSelector\Exception\SyntaxErrorException;
 
@@ -258,6 +262,14 @@ abstract class SilverStripeContext extends MinkContext implements SilverStripeAw
         } else {
             $this->getSession()->resizeWindow(1024, 768);
         }
+
+        // Flush everything
+        foreach (ClassInfo::implementorsOf(Flushable::class) as $class) {
+            $class::flush();
+        }
+        DataObject::flush_and_destroy_cache();
+        DataObject::reset();
+        SiteTree::reset();
     }
 
     /**

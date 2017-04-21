@@ -18,11 +18,6 @@ class LoginContext implements Context
     use MainContextAwareTrait;
 
     /**
-     * Cache for logInWithPermission()
-     */
-    protected $cache_generatedMembers = array();
-
-    /**
      * @Given /^I am logged in$/
      */
     public function stepIAmLoggedIn()
@@ -50,39 +45,7 @@ class LoginContext implements Context
     {
         $email = "{$permCode}@example.org";
         $password = 'Secret!123';
-        if (!isset($this->cache_generatedMembers[$permCode])) {
-            $group = Group::get()->filter('Title', "$permCode group")->first();
-            if (!$group) {
-                $group = Group::create();
-            }
-
-            $group->Title = "$permCode group";
-            $group->write();
-
-            $permission = Permission::create();
-            $permission->Code = $permCode;
-            $permission->write();
-            $group->Permissions()->add($permission);
-
-            $member = Member::get()->filter('Email', $email)->first();
-            if (!$member) {
-                $member = Member::create();
-            }
-
-            // make sure any validation for password is skipped, since we're not testing complexity here
-            $validator = Member::password_validator();
-            Member::set_password_validator(null);
-            $member->FirstName = $permCode;
-            $member->Surname = "User";
-            $member->Email = $email;
-            $member->PasswordEncryption = "none";
-            $member->changePassword($password);
-            $member->write();
-            $group->Members()->add($member);
-            Member::set_password_validator($validator);
-
-            $this->cache_generatedMembers[$permCode] = $member;
-        }
+        $this->generateMemberWithPermission($email, $password, $permCode);
         $this->stepILogInWith($email, $password);
     }
 
@@ -168,5 +131,51 @@ class LoginContext implements Context
         $member = Member::get()->filter('Email', $id)->First();
         assertNotNull($member);
         assertTrue($member->checkPassword($password)->isValid());
+    }
+
+    /**
+     * Get or generate a member with the given permission code
+     *
+     * @param string $email
+     * @param string $password
+     * @param string $permCode
+     * @return Member
+     */
+    protected function generateMemberWithPermission($email, $password, $permCode)
+    {
+        // Get or create group
+        $group = Group::get()->filter('Title', "$permCode group")->first();
+        if (!$group) {
+            $group = Group::create();
+        }
+
+        $group->Title = "$permCode group";
+        $group->write();
+
+        // Get or create permission
+        $permission = Permission::create();
+        $permission->Code = $permCode;
+        $permission->write();
+        $group->Permissions()->add($permission);
+
+        // Get or create member
+        $member = Member::get()->filter('Email', $email)->first();
+        if (!$member) {
+            $member = Member::create();
+        }
+
+        // make sure any validation for password is skipped, since we're not testing complexity here
+        $validator = Member::password_validator();
+        Member::set_password_validator(null);
+        $member->FirstName = $permCode;
+        $member->Surname = "User";
+        $member->Email = $email;
+        $member->PasswordEncryption = "none";
+        $member->changePassword($password);
+        $member->write();
+        $group->Members()->add($member);
+        Member::set_password_validator($validator);
+
+        return $member;
     }
 }
