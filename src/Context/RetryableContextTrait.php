@@ -5,16 +5,16 @@ namespace SilverStripe\BehatExtension\Context;
 trait RetryableContextTrait
 {
     /**
-     * Invoke $try callback for a non-empty result with a given timeout
+     * Invoke callback for a non-empty result with a given timeout
      *
-     * @param callable $try
+     * @param callable $callback
      * @param int $timeout Number of seconds to retry for
      * @return mixed Result of invoking $try, or null if timed out
      */
-    protected function retry($try, $timeout = 3)
+    protected function retryUntil($callback, $timeout = 3)
     {
         do {
-            $result = $try();
+            $result = $callback();
             if ($result) {
                 return $result;
             }
