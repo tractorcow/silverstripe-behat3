@@ -13,6 +13,8 @@ use SilverStripe\Assets\Folder;
 use SilverStripe\Assets\Storage\AssetStore;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Dev\BehatFixtureFactory;
+use SilverStripe\Dev\FixtureBlueprint;
 use SilverStripe\Dev\FixtureFactory;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\Dev\YamlFixture;
@@ -79,9 +81,31 @@ class FixtureContext implements Context
     public function getFixtureFactory()
     {
         if (!$this->fixtureFactory) {
-            $this->fixtureFactory = Injector::inst()->create(FixtureFactory::class);
+            $this->fixtureFactory = $this->scaffoldDefaultFixtureFactory();
         }
         return $this->fixtureFactory;
+    }
+
+
+    /**
+     * Build default fixture factory
+     *
+     * @return FixtureFactory
+     */
+    protected function scaffoldDefaultFixtureFactory()
+    {
+        $fixtureFactory = Injector::inst()->create(BehatFixtureFactory::class);
+
+        // Register blueprints
+        /** @var FixtureBlueprint $blueprint */
+        $blueprint = Injector::inst()->create(FixtureBlueprint::class, Member::class);
+        $blueprint->addCallback('beforeCreate', function ($identifier, &$data, &$fixtures) {
+            if (!isset($data['FirstName'])) {
+                $data['FirstName'] = $identifier;
+            }
+        });
+        $fixtureFactory->define(Member::class, $blueprint);
+        return $fixtureFactory;
     }
 
     /**

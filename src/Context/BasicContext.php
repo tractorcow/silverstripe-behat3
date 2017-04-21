@@ -66,7 +66,7 @@ class BasicContext implements Context
     }
 
     /**
-     * @AfterStep ~@modal
+     * @AfterStep
      *
      * Excluding scenarios with @modal tag is required,
      * because modal dialogs stop any JS interaction
@@ -75,19 +75,26 @@ class BasicContext implements Context
      */
     public function appendErrorHandlerBeforeStep(AfterStepScope $event)
     {
+        // Manually exclude @modal
+        if ($event->getFeature()->hasTag('modal')) {
+            return;
+        }
+
         try {
             $javascript = <<<JS
 window.onerror = function(message, file, line, column, error) {
-    let body = document.getElementsByTagName('body')[0];
-	let msg = message + " in " + file + ":" + line + ":" + column;
+    var body = document.getElementsByTagName('body')[0];
+	var msg = message + " in " + file + ":" + line + ":" + column;
 	if(error !== undefined && error.stack !== undefined) {
 		msg += "\\nSTACKTRACE:\\n" + error.stack;
 	}
     body.setAttribute('data-jserrors', '[captured JavaScript error] ' + msg);
-}
+};
 if ('undefined' !== typeof window.jQuery) {
     window.jQuery('body').ajaxError(function(event, jqxhr, settings, exception) {
-        if ('abort' === exception) return;
+        if ('abort' === exception) {
+            return;
+        }
         window.onerror(event.type + ': ' + settings.type + ' ' + settings.url + ' ' + exception + ' ' + jqxhr.responseText);
     });
 }
@@ -100,7 +107,7 @@ JS;
     }
 
     /**
-     * @AfterStep ~@modal
+     * @AfterStep
      *
      * Excluding scenarios with @modal tag is required,
      * because modal dialogs stop any JS interaction
@@ -109,6 +116,10 @@ JS;
      */
     public function readErrorHandlerAfterStep(AfterStepScope $event)
     {
+        // Manually exclude @modal
+        if ($event->getFeature()->hasTag('modal')) {
+            return;
+        }
         try {
             $page = $this->getSession()->getPage();
 
@@ -186,11 +197,15 @@ JS;
      *
      * Don't unregister handler if we're dealing with modal windows
      *
-     * @AfterStep ~@modal
+     * @AfterStep
      * @param AfterStepScope $event
      */
     public function handleAjaxAfterStep(AfterStepScope $event)
     {
+        // Manually exclude @modal
+        if ($event->getFeature()->hasTag('modal')) {
+            return;
+        }
         try {
             $ajaxEnabledSteps = $this->getMainContext()->getAjaxSteps();
             $ajaxEnabledSteps = implode('|', array_filter($ajaxEnabledSteps));
