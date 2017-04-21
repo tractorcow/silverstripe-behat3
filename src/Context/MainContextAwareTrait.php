@@ -1,6 +1,5 @@
 <?php
 
-
 namespace SilverStripe\BehatExtension\Context;
 
 use Behat\Behat\Context\Environment\InitializedContextEnvironment;
