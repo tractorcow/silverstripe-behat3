@@ -8,6 +8,7 @@ use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
 use Exception;
+use InvalidArgumentException;
 use SilverStripe\Assets\Folder;
 use SilverStripe\Assets\Storage\AssetStore;
 use SilverStripe\Core\ClassInfo;
@@ -17,12 +18,13 @@ use SilverStripe\Dev\SapphireTest;
 use SilverStripe\Dev\YamlFixture;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\Versioning\Versioned;
+use SilverStripe\Versioned\Versioned;
 use SilverStripe\Security\Group;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 
 // PHPUnit
+// @todo remove
 require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions.php';
 
 /**
@@ -59,11 +61,15 @@ class FixtureContext implements Context
      */
     protected $createdAssets = array();
 
+    /**
+     * FixtureContext constructor.
+     * @param null $filesPath
+     */
     public function __construct($filesPath = null)
     {
         if (empty($filesPath)) {
-            throw new \InvalidArgumentException("filesPath is required");
-    }
+            throw new InvalidArgumentException("filesPath is required");
+        }
         $this->setFilesPath($filesPath);
     }
 
@@ -152,7 +158,7 @@ class FixtureContext implements Context
     {
         $class = $this->convertTypeToClass($type);
         $fields = $this->prepareFixture($class, $id);
-        $this->fixtureFactory->createObject($class, $id, $fields);
+        $this->getFixtureFactory()->createObject($class, $id, $fields);
     }
 
     /**
@@ -172,14 +178,14 @@ class FixtureContext implements Context
             array($field => $value)
         );
         // We should check if this fixture object already exists - if it does, we update it. If not, we create it
-        if ($existingFixture = $this->fixtureFactory->get($class, $id)) {
+        if ($existingFixture = $this->getFixtureFactory()->get($class, $id)) {
             // Merge existing data with new data, and create new object to replace existing object
             foreach ($fields as $k => $v) {
                 $existingFixture->$k = $v;
             }
             $existingFixture->write();
         } else {
-            $this->fixtureFactory->createObject($class, $id, $fields);
+            $this->getFixtureFactory()->createObject($class, $id, $fields);
         }
     }
 
@@ -206,14 +212,14 @@ class FixtureContext implements Context
         );
         $fields = $this->prepareFixture($class, $id, $fields);
         // We should check if this fixture object already exists - if it does, we update it. If not, we create it
-        if ($existingFixture = $this->fixtureFactory->get($class, $id)) {
+        if ($existingFixture = $this->getFixtureFactory()->get($class, $id)) {
             // Merge existing data with new data, and create new object to replace existing object
             foreach ($fields as $k => $v) {
                 $existingFixture->$k = $v;
             }
             $existingFixture->write();
         } else {
-            $this->fixtureFactory->createObject($class, $id, $fields);
+            $this->getFixtureFactory()->createObject($class, $id, $fields);
         }
     }
 
@@ -291,7 +297,7 @@ class FixtureContext implements Context
                 // already written through $data above
                 break;
             default:
-                throw new \InvalidArgumentException(sprintf(
+                throw new InvalidArgumentException(sprintf(
                     'Invalid relation "%s"',
                     $relation
                 ));
@@ -334,9 +340,9 @@ class FixtureContext implements Context
         $relationClass = $this->convertTypeToClass($relationType);
 
         // Check if this fixture object already exists - if not, we create it
-        $relationObj = $this->fixtureFactory->get($relationClass, $relationId);
+        $relationObj = $this->getFixtureFactory()->get($relationClass, $relationId);
         if (!$relationObj) {
-            $relationObj = $this->fixtureFactory->createObject($relationClass, $relationId);
+            $relationObj = $this->getFixtureFactory()->createObject($relationClass, $relationId);
         }
 
         // Check if there is relationship defined in many_many (includes belongs_many_many)
@@ -377,7 +383,7 @@ class FixtureContext implements Context
         // Check if the fixture object exists - if not, we create it
         $obj = DataObject::get($class)->filter($field, $value)->first();
         if (!$obj) {
-            $obj = $this->fixtureFactory->createObject($class, $value);
+            $obj = $this->getFixtureFactory()->createObject($class, $value);
         }
         // If has_many or many_many, add this fixture object to the relation object
         // If has_one, set value to the joint field with this fixture object's ID
@@ -404,9 +410,9 @@ class FixtureContext implements Context
     {
         $class = $this->convertTypeToClass($type);
         /** @var DataObject|Versioned $obj */
-        $obj = $this->fixtureFactory->get($class, $id);
+        $obj = $this->getFixtureFactory()->get($class, $id);
         if (!$obj) {
-            throw new \InvalidArgumentException(sprintf(
+            throw new InvalidArgumentException(sprintf(
                 'Can not find record "%s" with identifier "%s"',
                 $type,
                 $id
@@ -429,7 +435,7 @@ class FixtureContext implements Context
                 $obj->delete();
                 break;
             default:
-                throw new \InvalidArgumentException(sprintf(
+                throw new InvalidArgumentException(sprintf(
                     'Invalid state: "%s"',
                     $state
                 ));
@@ -470,13 +476,13 @@ class FixtureContext implements Context
     public function stepCreateMemberWithGroup($id, $groupId)
     {
         /** @var Group $group */
-        $group = $this->fixtureFactory->get(Group::class, $groupId);
+        $group = $this->getFixtureFactory()->get(Group::class, $groupId);
         if (!$group) {
-            $group = $this->fixtureFactory->createObject(Group::class, $groupId);
+            $group = $this->getFixtureFactory()->createObject(Group::class, $groupId);
         }
 
         /** @var Member $member */
-        $member = $this->fixtureFactory->createObject(Member::class, $id);
+        $member = $this->getFixtureFactory()->createObject(Member::class, $id);
         $member->Groups()->add($group);
     }
 
@@ -501,13 +507,13 @@ class FixtureContext implements Context
         );
 
         /** @var Group $group */
-        $group = $this->fixtureFactory->get(Group::class, $groupId);
+        $group = $this->getFixtureFactory()->get(Group::class, $groupId);
         if (!$group) {
-            $group = $this->fixtureFactory->createObject(Group::class, $groupId);
+            $group = $this->getFixtureFactory()->createObject(Group::class, $groupId);
         }
 
         /** @var Member $member */
-        $member = $this->fixtureFactory->createObject(Member::class, $id, $fields);
+        $member = $this->getFixtureFactory()->createObject(Member::class, $id, $fields);
         $member->Groups()->add($group);
     }
 
@@ -525,9 +531,9 @@ class FixtureContext implements Context
         $permissions = $matches[1];
         $codes = Permission::get_codes(false);
 
-        $group = $this->fixtureFactory->get(Group::class, $id);
+        $group = $this->getFixtureFactory()->get(Group::class, $id);
         if (!$group) {
-            $group = $this->fixtureFactory->createObject(Group::class, $id);
+            $group = $this->getFixtureFactory()->createObject(Group::class, $id);
         }
 
         foreach ($permissions as $permission) {
@@ -541,7 +547,7 @@ class FixtureContext implements Context
                 }
             }
             if (!$found) {
-                throw new \InvalidArgumentException(sprintf(
+                throw new InvalidArgumentException(sprintf(
                     'No permission found for "%s"',
                     $permission
                 ));
@@ -561,15 +567,15 @@ class FixtureContext implements Context
     public function stepGoToNamedRecord($type, $id)
     {
         $class = $this->convertTypeToClass($type);
-        $record = $this->fixtureFactory->get($class, $id);
+        $record = $this->getFixtureFactory()->get($class, $id);
         if (!$record) {
-            throw new \InvalidArgumentException(sprintf(
+            throw new InvalidArgumentException(sprintf(
                 'Cannot resolve reference "%s", no matching fixture found',
                 $id
             ));
         }
         if (!$record->hasMethod('RelativeLink')) {
-            throw new \InvalidArgumentException('URL for record cannot be determined, missing RelativeLink() method');
+            throw new InvalidArgumentException('URL for record cannot be determined, missing RelativeLink() method');
         }
         $link = call_user_func([$record, 'RelativeLink']);
 
@@ -617,9 +623,9 @@ class FixtureContext implements Context
     {
         if (preg_match('/^=>/', $string)) {
             list($className, $identifier) = explode('.', preg_replace('/^=>/', '', $string), 2);
-            $id = $this->fixtureFactory->getId($className, $identifier);
+            $id = $this->getFixtureFactory()->getId($className, $identifier);
             if (!$id) {
-                throw new \InvalidArgumentException(sprintf(
+                throw new InvalidArgumentException(sprintf(
                     'Cannot resolve reference "%s", no matching fixture found',
                     $string
                 ));
@@ -641,7 +647,7 @@ class FixtureContext implements Context
     {
         $class = $this->convertTypeToClass($type);
         $fields = $this->prepareFixture($class, $id);
-        $record = $this->fixtureFactory->createObject($class, $id, $fields);
+        $record = $this->getFixtureFactory()->createObject($class, $id, $fields);
         $date = date("Y-m-d H:i:s", strtotime($time));
         $table = $record->baseTable();
         $field = ($mod == 'created') ? 'Created' : 'LastEdited';
@@ -692,7 +698,7 @@ class FixtureContext implements Context
         } else {
             // Check file exists
             if (!file_exists($sourcePath)) {
-                throw new \InvalidArgumentException(sprintf(
+                throw new InvalidArgumentException(sprintf(
                     'Source file for "%s" cannot be found in "%s"',
                     $relativeTargetPath,
                     $sourcePath
@@ -771,7 +777,7 @@ class FixtureContext implements Context
             }
         }
 
-        throw new \InvalidArgumentException(sprintf(
+        throw new InvalidArgumentException(sprintf(
             'Class "%s" does not exist, or is not a subclass of DataObjet',
             $class
         ));

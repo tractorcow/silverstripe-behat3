@@ -5,8 +5,8 @@ namespace SilverStripe\BehatExtension\Context\Initializer;
 use Behat\Behat\Context\Initializer\ContextInitializer;
 use Behat\Behat\Context\Context;
 use SilverStripe\BehatExtension\Context\SilverStripeAwareContext;
-use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
+use SilverStripe\TestSession\TestSessionEnvironment;
 
 /*
  * This file is part of the Behat/SilverStripeExtension
@@ -74,7 +74,7 @@ class SilverStripeAwareInitializer implements ContextInitializer
 
         file_put_contents('php://stdout', "Creating test session environment" . PHP_EOL);
 
-        $testEnv = Injector::inst()->get('TestSessionEnvironment');
+        $testEnv = TestSessionEnvironment::singleton();
         $testEnv->startTestSession(array(
             'createDatabase' => true
         ));

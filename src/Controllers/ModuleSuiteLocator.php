@@ -3,7 +3,6 @@
 namespace SilverStripe\BehatExtension\Controllers;
 
 use Behat\Testwork\Cli\Controller;
-use Behat\Testwork\ServiceContainer\ContainerLoader;
 use Behat\Testwork\Suite\Cli\SuiteController;
 use Behat\Testwork\Suite\ServiceContainer\SuiteExtension;
 use Behat\Testwork\Suite\SuiteRegistry;

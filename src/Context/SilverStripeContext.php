@@ -11,6 +11,7 @@ use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Exception\UnsupportedDriverActionException;
 use Behat\Mink\Exception\ElementNotFoundException;
 use InvalidArgumentException;
+use SilverStripe\TestSession\TestSessionEnvironment;
 use Symfony\Component\CssSelector\Exception\SyntaxErrorException;
 
 /**
@@ -57,6 +58,9 @@ abstract class SilverStripeContext extends MinkContext implements SilverStripeAw
      */
     protected $screenshotPath;
 
+    /**
+     * @var TestSessionEnvironment
+     */
     protected $testSessionEnvironment;
 
     protected $regionMap;
@@ -84,7 +88,7 @@ abstract class SilverStripeContext extends MinkContext implements SilverStripeAw
 
         // Initialize your context here
         $this->xpathEscaper = new Escaper();
-        $this->testSessionEnvironment = new \TestSessionEnvironment();
+        $this->testSessionEnvironment = TestSessionEnvironment::singleton();
     }
 
     /**
