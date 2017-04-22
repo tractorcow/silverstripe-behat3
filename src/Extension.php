@@ -3,7 +3,9 @@
 namespace SilverStripe\BehatExtension;
 
 use Behat\Testwork\Cli\ServiceContainer\CliExtension;
+use Behat\Testwork\Suite\Cli\InitializationController;
 use Behat\Testwork\Suite\ServiceContainer\SuiteExtension;
+use SilverStripe\BehatExtension\Controllers\ModuleInitialisationController;
 use SilverStripe\BehatExtension\Controllers\ModuleSuiteLocator;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -56,14 +58,9 @@ class Extension implements ExtensionInterface
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../config'));
         $loader->load('silverstripe.yml');
 
-        // Add new locator processor
-        // This provides old behat 2 style bootstrapping for behat 3
-        $definition = new Definition(ModuleSuiteLocator::class, [
-            $container,
-            new Reference(SuiteExtension::REGISTRY_ID)
-        ]);
-        $definition->addTag(CliExtension::CONTROLLER_TAG, [ 'priority' => 9999 ]);
-        $container->setDefinition(CliExtension::CONTROLLER_TAG . '.sslocator', $definition);
+        // Add CLI substitutions
+        $this->loadSuiteLocator($container);
+        $this->loadBootstrapController($container);
 
         // Set various paths
         $container->setParameter('silverstripe_extension.admin_url', $config['admin_url']);
@@ -123,5 +120,43 @@ class Extension implements ExtensionInterface
                 end()->
             end()->
         end();
+    }
+
+    /**
+     * Loads module suite locator.
+     * This is responsible for bootstrapping the module config
+     * for running tests.
+     *
+     * @param ContainerBuilder $container
+     */
+    protected function loadSuiteLocator(ContainerBuilder $container)
+    {
+        $definition = new Definition(ModuleSuiteLocator::class, [
+            $container,
+            new Reference(SuiteExtension::REGISTRY_ID)
+        ]);
+        $definition->addTag(CliExtension::CONTROLLER_TAG, ['priority' => 9999]);
+        $container->setDefinition(CliExtension::CONTROLLER_TAG . '.sslocator', $definition);
+    }
+
+
+
+    /**
+     * Loads suite bootstrap controller.
+     * This is responsible for invoking --init commands for modules.
+     * Replaces the core behat InitializationController
+     *
+     * @see InitializationController
+     * @param ContainerBuilder $container
+     */
+    protected function loadBootstrapController(ContainerBuilder $container)
+    {
+        $definition = new Definition(ModuleInitialisationController::class, [
+            $container,
+            new Reference(SuiteExtension::REGISTRY_ID),
+            new Reference(SuiteExtension::BOOTSTRAPPER_ID)
+        ]);
+        $definition->addTag(CliExtension::CONTROLLER_TAG, ['priority' => 900]);
+        $container->setDefinition(CliExtension::CONTROLLER_TAG . '.initialization', $definition);
     }
 }

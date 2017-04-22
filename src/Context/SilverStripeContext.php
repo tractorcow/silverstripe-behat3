@@ -3,7 +3,6 @@
 namespace SilverStripe\BehatExtension\Context;
 
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
-use Behat\Behat\Hook\Scope\BeforeStepScope;
 use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Selector\Xpath\Escaper;
 use Behat\MinkExtension\Context\MinkContext;

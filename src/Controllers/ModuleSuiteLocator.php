@@ -7,9 +7,7 @@ use Behat\Testwork\Suite\Cli\SuiteController;
 use Behat\Testwork\Suite\ServiceContainer\SuiteExtension;
 use Behat\Testwork\Suite\SuiteRegistry;
 use Exception;
-use InvalidArgumentException;
 use SilverStripe\Core\Manifest\Module;
-use SilverStripe\Core\Manifest\ModuleLoader;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -25,15 +23,17 @@ use Symfony\Component\Yaml\Parser;
  */
 class ModuleSuiteLocator implements Controller
 {
+    use ModuleCommandTrait;
+
     /**
      * @var Container
      */
-    private $container;
+    protected $container;
 
     /**
      * @var SuiteRegistry
      */
-    private $registry;
+    protected $registry;
 
     /**
      * Cache of configured suites
@@ -89,11 +89,13 @@ class ModuleSuiteLocator implements Controller
             return null;
         }
 
+        // Don't register config if init
+        if ($input->getOption('init')) {
+            return;
+        }
+
         // Get module
         $moduleName = $input->getArgument('module');
-        if (strpos($moduleName, '@') === 0) {
-            $moduleName = substr($moduleName, 1);
-        }
         $module = $this->getModule($moduleName);
 
         // Suite name always omits vendor
@@ -121,21 +123,6 @@ class ModuleSuiteLocator implements Controller
     }
 
     /**
-     * Find target module being tested
-     *
-     * @param string $input
-     * @return Module
-     */
-    protected function getModule($input)
-    {
-        $module = ModuleLoader::instance()->getManifest()->getModule($input);
-        if (!$module) {
-            throw new InvalidArgumentException("No module $input installed");
-        }
-        return $module;
-    }
-
-    /**
      * Get behat.yml configured for this module
      *
      * @param Module $module
@@ -143,11 +130,11 @@ class ModuleSuiteLocator implements Controller
      */
     protected function findModuleConfig(Module $module)
     {
-        $pathSuffix = $this->container->getParameter('silverstripe_extension.context.path_suffix');
+        $pathSuffix = $this->container->getParameter('silverstripe_extension.context.features_path');
         $path = $module->getPath();
 
         // Find all candidate paths
-        foreach ([ $path . '/', $path . '/' . $pathSuffix] as $parent) {
+        foreach ([ "{$path}/", "{$path}/{$pathSuffix}"] as $parent) {
             foreach ([$parent.'behat.yml', $parent.'.behat.yml'] as $candidate) {
                 if (file_exists($candidate)) {
                     return $candidate;
