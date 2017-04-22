@@ -6,8 +6,10 @@ use Behat\Behat\Context\Context;
 use Behat\Behat\Definition\Call;
 use Behat\Behat\Hook\Scope\AfterScenarioScope;
 use Behat\Behat\Hook\Scope\AfterStepScope;
+use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Behat\Hook\Scope\BeforeStepScope;
 use Behat\Behat\Hook\Scope\StepScope;
+use Behat\Gherkin\Node\ScenarioNode;
 use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Session;
@@ -32,6 +34,13 @@ require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions
 class BasicContext implements Context
 {
     use MainContextAwareTrait;
+
+    /**
+     * Work-around for https://github.com/Behat/Behat/issues/653
+     *
+     * @var ScenarioNode
+     */
+    protected $currentScenario = null;
 
     /**
      * Date format in date() syntax
@@ -66,6 +75,28 @@ class BasicContext implements Context
     }
 
     /**
+     * Work-around for https://github.com/Behat/Behat/issues/653
+     *
+     * @BeforeScenario
+     * @param BeforeScenarioScope $event
+     */
+    public function handleScenarioBegin(BeforeScenarioScope $event)
+    {
+        $this->currentScenario = $event->getScenario();
+    }
+
+    /**
+     * Work-around for https://github.com/Behat/Behat/issues/653
+     *
+     * @AfterScenario
+     * @param AfterScenarioScope $event
+     */
+    public function handleScenarioEnd(AfterScenarioScope $event)
+    {
+        $this->currentScenario = null;
+    }
+
+    /**
      * @AfterStep
      *
      * Excluding scenarios with @modal tag is required,
@@ -76,7 +107,7 @@ class BasicContext implements Context
     public function appendErrorHandlerBeforeStep(AfterStepScope $event)
     {
         // Manually exclude @modal
-        if ($event->getFeature()->hasTag('modal')) {
+        if ($this->stepHasTag($event, 'modal')) {
             return;
         }
 
@@ -117,7 +148,7 @@ JS;
     public function readErrorHandlerAfterStep(AfterStepScope $event)
     {
         // Manually exclude @modal
-        if ($event->getFeature()->hasTag('modal')) {
+        if ($this->stepHasTag($event, 'modal')) {
             return;
         }
         try {
@@ -153,6 +184,10 @@ JS;
      */
     public function handleAjaxBeforeStep(BeforeStepScope $event)
     {
+        // Manually exclude @modal
+        if ($this->stepHasTag($event, 'modal')) {
+            return;
+        }
         try {
             $ajaxEnabledSteps = $this->getMainContext()->getAjaxSteps();
             $ajaxEnabledSteps = implode('|', array_filter($ajaxEnabledSteps));
@@ -203,7 +238,7 @@ JS;
     public function handleAjaxAfterStep(AfterStepScope $event)
     {
         // Manually exclude @modal
-        if ($event->getFeature()->hasTag('modal')) {
+        if ($this->stepHasTag($event, 'modal')) {
             return;
         }
         try {
@@ -1219,5 +1254,26 @@ JS;
     protected function logException(Exception $exception)
     {
         file_put_contents('php://stderr', 'Exception caught: ' . $exception->getMessage());
+    }
+
+    /**
+     * Check if a step has a given tag
+     *
+     * @param StepScope $event
+     * @param string $tag
+     * @return bool
+     */
+    protected function stepHasTag(StepScope $event, $tag)
+    {
+        // Check scenario
+        if ($this->currentScenario && $this->currentScenario->hasTag($tag)) {
+            return true;
+        }
+        // Check feature
+        $feature = $event->getFeature();
+        if ($feature && $feature->hasTag($tag)) {
+            return true;
+        }
+        return false;
     }
 }
