@@ -40,7 +40,7 @@ Note: The extension has only been tested with the `selenium2` Mink driver.
 Simply [install SilverStripe through Composer](http://doc.silverstripe.org/framework/en/installation/composer).
 Skip this step if adding the module to an existing project.
 
-	composer create-project silverstripe/installer my-test-project 3.x-dev
+	composer create-project silverstripe/installer my-test-project 4.x-dev
 
 Switch to the newly created webroot, and add the SilverStripe Behat extension.
 
@@ -94,10 +94,6 @@ Now you can run the tests (for example for the `framework` module):
 
 	vendor/bin/behat @framework
 
-In order to run specific tests only, use their feature file name:
-
-	vendor/bin/behat @framework/login.feature
-
 Or even run a single scenario by it's name (supports regular expressions):
 
 	vendor/bin/behat --name 'My scenario title' @framework
@@ -118,18 +114,13 @@ The SilverStripe installer already comes with a YML configuration
 which is ready to run tests on a locally hosted Selenium server,
 located in the project root as `behat.yml`.
 
-You'll need to customize at least the `base_url` setting to match the URL where
-the tested SilverStripe instance is hosted locally.  This
+You should ensure that you have configured SS_BASE_URL in your `.env`.
 
 Generic Mink configuration settings are placed in `SilverStripe\BehatExtension\MinkExtension`,
 which is a subclass of `Behat\MinkExtension\Extension`.
 
 Overview of settings (all in the `extensions.SilverStripe\BehatExtension\Extension` path):
 
- * `extensions.Behat\MinkExtension\Extension.base_url`: You will probably need to change the base URL that is used during the test process.
-It is used every time you use relative URLs in your feature descriptions.
-It will also be used by [file to URL mapping](http://doc.silverstripe.org/framework/en/topics/commandline#configuration) in `SilverStripeExtension`.
- * `extensions.Behat\MinkExtension\Extension.files_path`: Change to support file uploads in your tests.  Currently only absolute paths are supported.
  * `ajax_steps`: Because SilverStripe uses AJAX requests quite extensively, we had to invent a way
 to deal with them more efficiently and less verbose than just
 Optional `ajax_steps` is used to match steps defined there so they can be "caught" by
@@ -144,18 +135,28 @@ number that failed.
 Example: behat.yml
 
 	default:
-	  context:
-	    class: SilverStripe\MyModule\Test\Behaviour\FeatureContext
+	  suites:
+	    framework:
+          paths:
+            - %paths.modules.framework%/tests/behat/features
+          contexts:
+            - SilverStripe\Framework\Tests\Behaviour\FeatureContext
+            - SilverStripe\Framework\Tests\Behaviour\CmsFormsContext
+            - SilverStripe\Framework\Tests\Behaviour\CmsUiContext
+            - SilverStripe\BehatExtension\Context\BasicContext
+            - SilverStripe\BehatExtension\Context\EmailContext
+            - SilverStripe\BehatExtension\Context\LoginContext
+            -
+              SilverStripe\BehatExtension\Context\FixtureContext:
+                - %paths.modules.framework%/tests/behat/features/files/
 	  extensions:
-	    SilverStripe\BehatExtension\Extension:
-	      screenshot_path: %behat.paths.base%/artifacts/screenshots
-	    SilverStripe\BehatExtension\MinkExtension:
-	      # Adjust this to your local environment
-	      base_url:  http://localhost/
-	      default_session: selenium2
-	      javascript_session: selenium2
-	      selenium2:
-	        browser: firefox
+        SilverStripe\BehatExtension\MinkExtension:
+          default_session: selenium2
+          javascript_session: selenium2
+          selenium2:
+            browser: firefox
+        SilverStripe\BehatExtension\Extension:
+          screenshot_path: %paths.base%/artifacts/screenshots
 
 ## Module Initialization
 
@@ -171,18 +172,14 @@ Since step definitions are quite domain specific, its likely that you'll need yo
 The SilverStripe Behat extension provides an initializer script which generates a template
 in the recommended folder structure:
 
-	vendor/bin/behat --init @mymodule
+	vendor/bin/behat --init @mymodule --namespace="MyVendor\MyModule"
 
-You'll now have a class located in `mymodule/tests/behat/features/bootstrap/Context/FeatureContext.php`,
-as well as a folder for your features with `mymodule/tests/behat/features`.
-The class is namespaced, and defaults to the module name. You can customize this:
+	Note: namespace is mandatory
 
-	vendor/bin/behat --namespace='MyVendor\MyModule' --init @mymodule
-
-In this case, you'll need to pass in the namespace when running the features as well
-(at least until SilverStripe modules allow declaring a namespace).
-
-	vendor/bin/behat --namespace='MyVendor\MyModule' @mymodule
+You'll now have a class located in `mymodule/tests/behat/src/FeatureContext.php`,
+which will have a psr-4 class mapping added to composer.json by default.
+Also a folder for your features with `mymodule/tests/behat/features` will be created.
+A `mymodule/behat.yml` is built, with a default suite named after the module.
 
 ## Available Step Definitions
 
@@ -264,9 +261,10 @@ use the inline definition syntax. The following example shows some syntax variat
 ### Directory Structure
 
 As a convention, SilverStripe Behat tests live in a `tests/behat` subfolder
-of your module. You can create it with the following command:
+of your module. You can create it with the following commands:
 
-	mkdir -p mymodule/tests/behat/features/bootstrap/MyModule/Test/Behaviour
+	mkdir -p mymodule/tests/behat/features/
+	mkdir -p mymodule/tests/behat/src/
 
 ### FeatureContext
 
@@ -275,24 +273,15 @@ here as well. The only major difference is the base class from which
 to extend your own `FeatureContext`: It should be `SilverStripeContext`
 rather than `BehatContext`.
 
-Example: mymodule/tests/behat/features/bootstrap/MyModule/Test/Behaviour/FeatureContext.php
+Example: mymodule/tests/behat/src/FeatureContext.php
 
 	<?php
 	namespace MyModule\Test\Behaviour;
 
-	use SilverStripe\BehatExtension\Context\SilverStripeContext,
-	    SilverStripe\BehatExtension\Context\BasicContext,
-	    SilverStripe\BehatExtension\Context\LoginContext;
+	use SilverStripe\BehatExtension\Context\SilverStripeContext;
 
 	class FeatureContext extends SilverStripeContext
 	{
-	    public function __construct(array $parameters)
-	    {
-	        $this->useContext('BasicContext', new BasicContext($parameters));
-	        $this->useContext('LoginContext', new LoginContext($parameters));
-
-	        parent::__construct($parameters);
-	    }
 	}
 
 ### Screen Size

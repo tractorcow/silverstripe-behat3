@@ -267,8 +267,8 @@ class ModuleInitialisationController implements Controller
             ],
             'contexts' => [
                 $class,
-                \SilverStripe\Framework\Test\Behaviour\CmsFormsContext::class,
-                \SilverStripe\Framework\Test\Behaviour\CmsUiContext::class,
+                \SilverStripe\Framework\Tests\Behaviour\CmsFormsContext::class,
+                \SilverStripe\Framework\Tests\Behaviour\CmsUiContext::class,
                 \SilverStripe\BehatExtension\Context\BasicContext::class,
                 \SilverStripe\BehatExtension\Context\EmailContext::class,
                 \SilverStripe\BehatExtension\Context\LoginContext::class,
