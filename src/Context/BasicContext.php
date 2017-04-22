@@ -34,6 +34,7 @@ require_once BASE_PATH . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions
 class BasicContext implements Context
 {
     use MainContextAwareTrait;
+    use RetryableContextTrait;
 
     /**
      * Work-around for https://github.com/Behat/Behat/issues/653
@@ -450,10 +451,19 @@ JS;
      */
     public function iShouldSeeAButton($negative, $text)
     {
-        $matchedEl = $this->findNamedButton($text);
-        if (trim($negative)) {
-            assertNull($matchedEl, sprintf('%s button found', $text));
+        $isNot = trim($negative);
+        if ($isNot) {
+            // Wait until hidden
+            $hidden = $this->retryUntil(function () use ($text) {
+                $button = $this->findNamedButton($text);
+                return is_null($button);
+            }, $negative);
+            assert($hidden, sprintf('%s button found', $text));
         } else {
+            // Wait until found
+            $matchedEl = $this->retryUntil(function () use ($text) {
+                return $this->findNamedButton($text);
+            }, $negative);
             assertNotNull($matchedEl, sprintf('%s button not found', $text));
         }
     }
@@ -464,7 +474,9 @@ JS;
      */
     public function stepIPressTheButton($text)
     {
-        $button = $this->findNamedButton($text);
+        $button = $this->retryUntil(function () use ($text) {
+            return $this->findNamedButton($text);
+        });
         assertNotNull($button, "{$text} button not found");
         $button->click();
     }
